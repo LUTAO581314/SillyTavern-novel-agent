@@ -109,6 +109,7 @@ import { ChatCompletionService, TextCompletionService } from './custom-request.j
 import { ConnectionManagerRequestService } from './extensions/shared.js';
 import { updateReasoningUI, parseReasoningFromString, getReasoningTemplateByName } from './reasoning.js';
 import { IGNORE_SYMBOL } from './constants.js';
+import { generationProviderApi } from './generation-provider-registry.js';
 import { macros } from './macros/macro-system.js';
 
 export function getContext() {
@@ -140,6 +141,7 @@ export function getContext() {
         deleteLastMessage,
         deleteMessage,
         generate: Generate,
+        generationProviders: generationProviderApi,
         sendStreamingRequest,
         sendGenerationRequest,
         stopGeneration,

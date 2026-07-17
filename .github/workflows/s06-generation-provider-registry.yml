@@ -1,0 +1,74 @@
+name: S06 Generation provider registry
+
+on:
+  push:
+    branches:
+      - codex/s06-generation-provider-registry
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registry-and-upstream-regression:
+    name: External generation hook and native regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out implementation
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Node.js
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tests/package-lock.json
+
+      - name: Install locked dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm ci --ignore-scripts --prefix tests
+
+      - name: Verify provider registry and integration boundaries
+        run: npm run test:novel
+
+      - name: Regress upstream unit tests
+        run: npm run test:unit --prefix tests -- --runInBand
+
+      - name: Lint upstream and Novel sources
+        run: npm run lint
+
+      - name: Install Chromium
+        working-directory: tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Start SillyTavern and run browser contracts
+        shell: bash
+        run: |
+          npm start > "$RUNNER_TEMP/sillytavern.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for _ in {1..60}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8000/ > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+
+          if [[ "$ready" != true ]]; then
+            cat "$RUNNER_TEMP/sillytavern.log"
+            exit 1
+          fi
+
+          npm run test:e2e --prefix tests
+
+      - name: Print server log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/sillytavern.log" || true
