@@ -47,6 +47,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Start SillyTavern and run browser contracts
+        timeout-minutes: 5
         shell: bash
         run: |
           npm start > "$RUNNER_TEMP/sillytavern.log" 2>&1 &
@@ -54,8 +55,8 @@ jobs:
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
           ready=false
-          for _ in {1..60}; do
-            if curl --fail --silent --show-error http://127.0.0.1:8000/ > /dev/null; then
+          for _ in {1..30}; do
+            if curl --max-time 2 --fail --silent --show-error http://127.0.0.1:8000/ > /dev/null; then
               ready=true
               break
             fi
@@ -67,8 +68,8 @@ jobs:
             exit 1
           fi
 
-          npm run test:e2e --prefix tests
+          npm run test:e2e --prefix tests -- generation-provider-registry.e2e.js --timeout=60000
 
       - name: Print server log on failure
-        if: failure()
+        if: failure() || cancelled()
         run: cat "$RUNNER_TEMP/sillytavern.log" || true

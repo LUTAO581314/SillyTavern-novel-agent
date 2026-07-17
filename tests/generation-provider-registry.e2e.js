@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('an extension provider generates and stops without a native backend connection', async ({ page }) => {
     await page.goto('/');
-    await page.waitForFunction('document.getElementById("preloader") === null', { timeout: 0 });
+    await page.waitForFunction('document.getElementById("preloader") === null', { timeout: 30_000 });
 
     const result = await page.evaluate(async () => {
         const context = globalThis.SillyTavern.getContext();
