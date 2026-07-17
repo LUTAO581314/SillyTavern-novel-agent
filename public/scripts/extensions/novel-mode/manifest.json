@@ -1,0 +1,17 @@
+{
+    "display_name": "Novel Mode",
+    "loading_order": 1,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Novel Agent",
+    "version": "0.1.0",
+    "homePage": "https://github.com/LUTAO581314/mirofish-novel-lab",
+    "hooks": {
+        "activate": "init",
+        "enable": "enable",
+        "disable": "disable",
+        "delete": "disable"
+    }
+}

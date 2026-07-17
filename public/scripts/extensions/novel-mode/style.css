@@ -1,0 +1,21 @@
+.novel-mode-settings .inline-drawer-content {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.novel-mode-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 2rem;
+}
+
+.novel-mode-status span:last-child {
+    color: var(--SmartThemeQuoteColor);
+    text-align: right;
+}
+
+.novel-mode-settings .menu_button {
+    justify-self: start;
+}

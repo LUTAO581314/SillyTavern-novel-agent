@@ -46,6 +46,15 @@ module.exports = {
             },
         },
         {
+            files: ['novel-tests/**/*.js'],
+            env: {
+                node: true,
+            },
+            parserOptions: {
+                sourceType: 'module',
+            },
+        },
+        {
             // Browser-side files
             files: ['public/**/*.js'],
             env: {
@@ -76,6 +85,8 @@ module.exports = {
         'src/tokenizers/**',
         'docker/**',
         'plugins/**',
+        '!plugins/novel-runtime-bridge/',
+        '!plugins/novel-runtime-bridge/**',
         '**/*.min.js',
         'public/scripts/extensions/quick-reply/lib/**',
         'public/scripts/extensions/tts/lib/**',

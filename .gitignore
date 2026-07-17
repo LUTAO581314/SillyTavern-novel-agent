@@ -48,6 +48,10 @@ access.log
 public/css/user.css
 public/error/
 /plugins/
+!/plugins/
+/plugins/*
+!/plugins/novel-runtime-bridge/
+!/plugins/novel-runtime-bridge/**
 /data
 /default/scaffold
 public/scripts/extensions/third-party
