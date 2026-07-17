@@ -1,14 +1,15 @@
 # Novel Mode shell
 
-This system extension is the first isolated Novel Edition client boundary. In
-S02-04 it only mounts a reversible settings shell and reads the same-origin
-server plugin health route.
+This built-in extension is the reversible SillyTavern Novel Edition client
+boundary. S06-06 adds only the integration shell:
 
-It does not call a model, send a turn, render provisional prose, store Runtime
-credentials, or write canonical state. The `GenerationProviderRegistry` exists
-as an unwired core contract; Novel Mode generation takeover is ordered work in
-S06.
+- fixed same-origin Runtime health and turn-snapshot reads;
+- project, branch, chapter, scene, audience, and recovery-cursor binding;
+- `act`, `speak`, `narrate`, and author-only `direct` input intent semantics;
+- a version-aware Render Event dispatcher with safe text fallback;
+- an allowlisted ST message display-cache codec.
 
-The extension uses SillyTavern's normal `activate`, `enable`, `disable`, and
-`delete` hooks. Its internal Enabled toggle controls only shell health checks in
-this stage.
+The shell does not submit a turn, register an active generation provider, call
+a model or MiroFish, access PostgreSQL, or commit canonical state. S08 supplies
+the real Agent turn lifecycle and persistent novel stage. Runtime snapshots,
+not SillyTavern chat messages, are the recovery source.

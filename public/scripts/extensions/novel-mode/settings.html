@@ -5,18 +5,51 @@
             <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
         <div class="inline-drawer-content">
-            <label class="checkbox_label" for="novel_mode_enabled">
-                <input id="novel_mode_enabled" type="checkbox">
-                <span>Enabled</span>
-            </label>
-            <div class="novel-mode-status" aria-live="polite">
-                <span>Runtime bridge</span>
-                <span id="novel_mode_runtime_status">Disabled</span>
+            <div class="novel-mode-headline">
+                <label class="checkbox_label" for="novel_mode_enabled">
+                    <input id="novel_mode_enabled" type="checkbox">
+                    <span>Enabled</span>
+                </label>
+                <div class="novel-mode-status" aria-live="polite">
+                    <span>Runtime</span>
+                    <span id="novel_mode_runtime_status">Disabled</span>
+                </div>
+                <button id="novel_mode_refresh" class="menu_button" type="button" title="Refresh Runtime status" aria-label="Refresh Runtime status">
+                    <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                </button>
             </div>
-            <button id="novel_mode_refresh" class="menu_button" type="button" title="Refresh Runtime bridge status">
-                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-                <span>Refresh</span>
-            </button>
+
+            <fieldset id="novel_mode_binding" class="novel-mode-binding">
+                <legend>Story context</legend>
+                <label>Project<input id="novel_mode_project" type="text" maxlength="128" autocomplete="off"></label>
+                <label>Branch<input id="novel_mode_branch" type="text" maxlength="128" autocomplete="off"></label>
+                <label>Chapter<input id="novel_mode_chapter" type="text" maxlength="128" autocomplete="off"></label>
+                <label>Scene<input id="novel_mode_scene" type="text" maxlength="128" autocomplete="off"></label>
+                <label>Recovery turn<input id="novel_mode_resume_turn" type="text" maxlength="128" autocomplete="off"></label>
+                <label>Audience
+                    <select id="novel_mode_audience">
+                        <option value="author">Author</option>
+                        <option value="player">Player</option>
+                    </select>
+                </label>
+                <button id="novel_mode_bind" class="menu_button" type="button">
+                    <i class="fa-solid fa-link" aria-hidden="true"></i>
+                    <span>Bind</span>
+                </button>
+                <span id="novel_mode_binding_status" class="novel-mode-binding-status" aria-live="polite">Unbound</span>
+            </fieldset>
+
+            <div class="novel-mode-segments" role="group" aria-label="Novel input mode">
+                <button type="button" data-novel-mode="act" aria-pressed="true">Act</button>
+                <button type="button" data-novel-mode="speak" aria-pressed="false">Speak</button>
+                <button type="button" data-novel-mode="narrate" aria-pressed="false">Narrate</button>
+                <button type="button" data-novel-mode="direct" aria-pressed="false">Direct</button>
+            </div>
+
+            <div class="novel-mode-recovery" aria-live="polite">
+                <span id="novel_mode_committed_view"></span>
+                <span class="novel-mode-component-count"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span id="novel_mode_component_count">0</span></span>
+            </div>
         </div>
     </div>
 </div>

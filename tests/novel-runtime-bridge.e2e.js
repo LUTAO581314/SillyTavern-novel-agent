@@ -27,9 +27,9 @@ test('the loaded Runtime bridge exposes only a same-origin public health payload
             'turn.snapshot',
         ],
         canonicalWrite: false,
-        runtimeConfigured: false,
-        runtimeReachable: false,
-        runtimeService: null,
+        runtimeConfigured: true,
+        runtimeReachable: true,
+        runtimeService: 'novel-runtime',
     });
     expect(JSON.stringify(result.body)).not.toMatch(/token|authorization|baseUrl|127\.0\.0\.1/i);
 });
