@@ -8,7 +8,15 @@ function json(response, status, body) {
     response.end(JSON.stringify(body));
 }
 
-const server = http.createServer((request, response) => {
+async function readJson(request) {
+    const chunks = [];
+    for await (const chunk of request) chunks.push(chunk);
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+}
+
+let worldRevision = 0;
+
+const server = http.createServer(async (request, response) => {
     if (request.headers.authorization !== 'Bearer fixture-runtime-token') {
         return json(response, 401, {
             schemaVersion: 1,
@@ -65,6 +73,82 @@ const server = http.createServer((request, response) => {
                         },
                     },
                 ],
+            },
+        });
+    }
+    if (
+        request.method === 'POST' &&
+        request.url === '/api/v1/projects/project-1/world-guide/proposals'
+    ) {
+        const body = await readJson(request);
+        return json(response, 200, {
+            schemaVersion: 1,
+            ok: true,
+            data: {
+                schemaVersion: 1,
+                proposalId: `proposal-${worldRevision + 1}`,
+                projectId: 'project-1',
+                baseWorldRevision: worldRevision,
+                sourceMode: body.source.mode,
+                trust: 'untrusted',
+                model: {
+                    providerId: 'fake:model-default',
+                    modelProfileId: 'model-default',
+                    modelId: 'fake-model',
+                    correlationId: `correlation-${worldRevision + 1}`,
+                    providerRequestId: `request-${worldRevision + 1}`,
+                },
+                questions: [{
+                    id: 'question-tone',
+                    prompt: 'Choose the opening tone',
+                    required: false,
+                    options: ['Grounded', 'Speculative'],
+                }],
+                suggestions: [{
+                    suggestionId: 'suggestion-facade',
+                    questionIds: ['question-tone'],
+                    rationale: 'Creates a previewable facade.',
+                    trust: 'untrusted',
+                    source: {
+                        kind: 'model_suggestion',
+                        reference: 'world-guide:fixture;trust=untrusted',
+                    },
+                    item: {
+                        id: `facade-${worldRevision + 1}`,
+                        itemType: 'project_facade',
+                        title: 'Fixture facade',
+                        payload: {
+                            synopsis: 'A fixture mystery.',
+                            tags: ['mystery'],
+                            audience: 'Test readers',
+                        },
+                        controlMode: 'tentative',
+                    },
+                }],
+            },
+        });
+    }
+    if (
+        request.method === 'POST' &&
+        request.url === '/api/v1/projects/project-1/world-guide/confirm'
+    ) {
+        const body = await readJson(request);
+        worldRevision += 1;
+        return json(response, 201, {
+            schemaVersion: 1,
+            ok: true,
+            data: {
+                schemaVersion: 1,
+                proposalId: body.proposalId,
+                suggestionId: body.suggestionId,
+                trust: 'untrusted',
+                source: {
+                    kind: 'model_suggestion',
+                    reference: 'world-guide:fixture;trust=untrusted',
+                },
+                commandId: `command-${worldRevision}`,
+                replayed: false,
+                world: { revision: worldRevision },
             },
         });
     }

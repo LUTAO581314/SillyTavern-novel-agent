@@ -1,0 +1,110 @@
+name: S07 AI world guide
+
+on:
+  push:
+    branches:
+      - codex/s07-ai-world-guide
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: s07-ai-world-guide-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  world-guide-and-upstream-regression:
+    name: World guide UI, bridge, and native regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out implementation
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tests/package-lock.json
+
+      - name: Install locked dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm ci --ignore-scripts --prefix tests
+
+      - name: Verify Novel Mode and world guide boundaries
+        run: npm run test:novel
+
+      - name: Regress upstream unit tests
+        run: npm run test:unit --prefix tests -- --runInBand
+
+      - name: Lint upstream and Novel sources
+        run: npm run lint
+
+      - name: Install Chromium
+        working-directory: tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Enable trusted server plugin in the ephemeral runner
+        shell: bash
+        run: |
+          cp default/config.yaml config.yaml
+          sed -i 's/^enableServerPlugins: false$/enableServerPlugins: true/' config.yaml
+          sed -i 's/^enableServerPluginsAutoUpdate: true$/enableServerPluginsAutoUpdate: false/' config.yaml
+          grep -q '^enableServerPlugins: true$' config.yaml
+          grep -q '^enableServerPluginsAutoUpdate: false$' config.yaml
+
+      - name: Run Runtime fixture, SillyTavern, and browser contracts
+        timeout-minutes: 6
+        shell: bash
+        env:
+          NOVEL_RUNTIME_BASE_URL: http://127.0.0.1:8787
+          NOVEL_RUNTIME_TOKEN: fixture-runtime-token
+        run: |
+          node novel-tests/fixtures/runtime-snapshot-server.js > "$RUNNER_TEMP/novel-runtime.log" 2>&1 &
+          runtime_pid=$!
+          npm start > "$RUNNER_TEMP/sillytavern.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" "$runtime_pid" 2>/dev/null || true' EXIT
+
+          runtime_ready=false
+          server_ready=false
+          for _ in {1..30}; do
+            if curl --max-time 2 --fail --silent --show-error \
+              -H 'Authorization: Bearer fixture-runtime-token' \
+              http://127.0.0.1:8787/api/health > /dev/null; then
+              runtime_ready=true
+            fi
+            if curl --max-time 2 --fail --silent --show-error http://127.0.0.1:8000/ > /dev/null; then
+              server_ready=true
+            fi
+            if [[ "$runtime_ready" == true && "$server_ready" == true ]]; then
+              break
+            fi
+            sleep 1
+          done
+
+          if [[ "$runtime_ready" != true || "$server_ready" != true ]]; then
+            cat "$RUNNER_TEMP/novel-runtime.log"
+            cat "$RUNNER_TEMP/sillytavern.log"
+            exit 1
+          fi
+
+          grep -q 'novel-runtime-bridge' "$RUNNER_TEMP/sillytavern.log"
+          npm run test:e2e --prefix tests -- \
+            generation-provider-registry.e2e.js \
+            novel-runtime-bridge.e2e.js \
+            novel-mode-shell.e2e.js \
+            novel-world-guide.e2e.js \
+            --timeout=60000
+
+      - name: Print service logs on failure
+        if: failure() || cancelled()
+        run: |
+          cat "$RUNNER_TEMP/novel-runtime.log" || true
+          cat "$RUNNER_TEMP/sillytavern.log" || true

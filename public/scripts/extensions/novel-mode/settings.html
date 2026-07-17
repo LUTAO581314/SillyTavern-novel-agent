@@ -39,6 +39,28 @@
                 <span id="novel_mode_binding_status" class="novel-mode-binding-status" aria-live="polite">Unbound</span>
             </fieldset>
 
+            <fieldset id="novel_world_guide" class="novel-world-guide">
+                <legend>World Guide</legend>
+                <div class="novel-world-guide-toolbar">
+                    <div class="novel-world-guide-sources" role="group" aria-label="World source">
+                        <button type="button" data-world-guide-source="inspiration" aria-pressed="true">Inspiration</button>
+                        <button type="button" data-world-guide-source="existing_text" aria-pressed="false">Existing text</button>
+                        <button type="button" data-world-guide-source="blank" aria-pressed="false">Blank</button>
+                    </div>
+                    <label>Model<input id="novel_world_guide_model" type="text" maxlength="128" autocomplete="off" value="model-default"></label>
+                </div>
+                <textarea id="novel_world_guide_source" rows="3" maxlength="200000"></textarea>
+                <div class="novel-world-guide-actions">
+                    <button id="novel_world_guide_generate" class="menu_button" type="button">
+                        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                        <span>Propose</span>
+                    </button>
+                    <span id="novel_world_guide_status" aria-live="polite">Idle</span>
+                </div>
+                <div id="novel_world_guide_questions" class="novel-world-guide-questions"></div>
+                <div id="novel_world_guide_suggestions" class="novel-world-guide-suggestions"></div>
+            </fieldset>
+
             <div class="novel-mode-segments" role="group" aria-label="Novel input mode">
                 <button type="button" data-novel-mode="act" aria-pressed="true">Act</button>
                 <button type="button" data-novel-mode="speak" aria-pressed="false">Speak</button>

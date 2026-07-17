@@ -8,6 +8,8 @@ export const NOVEL_RUNTIME_BRIDGE_HEALTH_FIXTURE = Object.freeze({
         'turn.events',
         'turn.cancel',
         'turn.snapshot',
+        'world-guide.propose',
+        'world-guide.confirm',
     ]),
     canonicalWrite: false,
 });

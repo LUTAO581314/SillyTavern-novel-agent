@@ -213,6 +213,32 @@ export async function init(router, {
         });
         sendJsonResult(response, result);
     }));
+
+    router.post('/v1/projects/:projectId/world-guide/proposals', route(async (request, response, context) => {
+        const projectId = requireOpaqueId(request.params.projectId, 'Project ID');
+        const result = await runtimeClient.requestJson({
+            path: `/api/v1/projects/${encodeURIComponent(projectId)}/world-guide/proposals`,
+            method: 'POST',
+            actorId: context.actorId,
+            body: { ...readObjectBody(request), actorId: context.actorId },
+            correlationId: context.correlationId,
+            signal: context.signal,
+        });
+        sendJsonResult(response, result);
+    }));
+
+    router.post('/v1/projects/:projectId/world-guide/confirm', route(async (request, response, context) => {
+        const projectId = requireOpaqueId(request.params.projectId, 'Project ID');
+        const result = await runtimeClient.requestJson({
+            path: `/api/v1/projects/${encodeURIComponent(projectId)}/world-guide/confirm`,
+            method: 'POST',
+            actorId: context.actorId,
+            body: { ...readObjectBody(request), actorId: context.actorId },
+            correlationId: context.correlationId,
+            signal: context.signal,
+        });
+        sendJsonResult(response, result);
+    }));
 }
 
 export async function exit() {

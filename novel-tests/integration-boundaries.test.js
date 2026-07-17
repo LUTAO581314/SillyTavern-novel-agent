@@ -19,6 +19,7 @@ test('Novel Mode manifest exposes reversible hooks and a shell view', () => {
         delete: 'disable',
     });
     assert.match(read('public/scripts/extensions/novel-mode/settings.html'), /novel_mode_enabled/);
+    assert.match(read('public/scripts/extensions/novel-mode/settings.html'), /novel_world_guide/);
 });
 
 test('S06-04 dispatches an external provider before native connection checks', () => {
@@ -62,6 +63,7 @@ test('browser code contains no Runtime target, token, or canonical write route',
         read('public/scripts/extensions/novel-mode/session.js'),
         read('public/scripts/extensions/novel-mode/render-event-dispatcher.js'),
         read('public/scripts/extensions/novel-mode/display-cache.js'),
+        read('public/scripts/extensions/novel-mode/world-guide.js'),
         read('public/scripts/extensions/novel-mode/settings.html'),
     ].join('\n');
 
@@ -70,7 +72,9 @@ test('browser code contains no Runtime target, token, or canonical write route',
     assert.doesNotMatch(browserSource, /canon(?:ical)?\/(?:commit|write)/i);
     assert.match(browserSource, /\/api\/plugins\/novel-runtime-bridge/);
     assert.match(browserSource, /get\('\/health'/);
-    assert.doesNotMatch(browserSource, /method:\s*['"]POST['"]/);
+    assert.match(browserSource, /world-guide\/proposals/);
+    assert.match(browserSource, /world-guide\/confirm/);
+    assert.doesNotMatch(browserSource, /\/api\/v1\/projects/);
     assert.doesNotMatch(browserSource, /generationProviders\.register|@novel\/db|postgres|openai|mirofish/i);
     assert.doesNotMatch(browserSource, /baseUrl|targetUrl|runtimeUrl/i);
 });

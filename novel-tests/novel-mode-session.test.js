@@ -141,6 +141,83 @@ describe('Novel Mode binding shell', () => {
         assert.throws(() => session.createInputIntent('direct', 'Reveal the hidden plan.'), /not permitted/i);
     });
 
+    test('world guide client uses fixed same-origin proposal and confirmation routes', async () => {
+        const requests = [];
+        const client = createNovelModeRuntimeClient({
+            getHeaders: () => ({
+                authorization: 'Bearer browser-secret',
+                'x-csrf-token': 'csrf-only',
+                'x-novel-actor-id': 'browser:attacker',
+            }),
+            fetchImpl: async (url, options) => {
+                requests.push({ url, options });
+                if (url.endsWith('/proposals')) {
+                    return Response.json({
+                        schemaVersion: 1,
+                        ok: true,
+                        data: {
+                            schemaVersion: 1,
+                            proposalId: 'proposal-1',
+                            projectId: 'project-1',
+                            baseWorldRevision: 0,
+                            sourceMode: 'blank',
+                            trust: 'untrusted',
+                            model: {},
+                            questions: [],
+                            suggestions: [{
+                                suggestionId: 'suggestion-1',
+                                trust: 'untrusted',
+                                source: { kind: 'model_suggestion', reference: 'guide-ref' },
+                                item: { id: 'item-1' },
+                            }],
+                        },
+                    });
+                }
+                return Response.json({
+                    schemaVersion: 1,
+                    ok: true,
+                    data: {
+                        trust: 'untrusted',
+                        source: { kind: 'model_suggestion', reference: 'guide-ref' },
+                        replayed: false,
+                        world: { revision: 1 },
+                    },
+                }, { status: 201 });
+            },
+        });
+
+        const preview = await client.proposeWorld('project-1', {
+            schemaVersion: 1,
+            actorId: 'bridge-owned',
+            modelProfileId: 'model-default',
+            source: { mode: 'blank' },
+        });
+        assert.equal(preview.trust, 'untrusted');
+        const confirmation = await client.confirmWorld('project-1', {
+            schemaVersion: 1,
+            actorId: 'bridge-owned',
+            proposalId: 'proposal-1',
+        });
+        assert.equal(confirmation.world.revision, 1);
+        assert.deepEqual(requests.map(item => item.url), [
+            '/api/plugins/novel-runtime-bridge/v1/projects/project-1/world-guide/proposals',
+            '/api/plugins/novel-runtime-bridge/v1/projects/project-1/world-guide/confirm',
+        ]);
+        for (const request of requests) {
+            assert.equal(request.options.method, 'POST');
+            assert.equal(request.options.credentials, 'same-origin');
+            const headers = Object.fromEntries(request.options.headers);
+            assert.equal(headers.authorization, undefined);
+            assert.equal(headers['x-novel-actor-id'], undefined);
+            assert.equal(headers['x-csrf-token'], 'csrf-only');
+            assert.equal(headers['content-type'], 'application/json');
+        }
+        await assert.rejects(
+            () => client.proposeWorld('https://attacker.invalid/', {}),
+            /opaque identifier/i,
+        );
+    });
+
     test('rejects incomplete bindings and does not accept canonical state in message cache', async () => {
         const session = new NovelModeSession({
             runtimeClient: { snapshot: async () => ({ events: [] }) },

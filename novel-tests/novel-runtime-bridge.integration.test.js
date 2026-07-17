@@ -112,6 +112,26 @@ function runtimeFixture(request, response, body) {
             data: { turnId: 'turn-fixed-target', lastEventId: 'event-4', seq: 4 },
         });
     }
+    if (
+        request.method === 'POST' &&
+        request.url === '/api/v1/projects/project-guide/world-guide/proposals'
+    ) {
+        return json(response, 200, {
+            schemaVersion: 1,
+            ok: true,
+            data: { received: JSON.parse(body) },
+        });
+    }
+    if (
+        request.method === 'POST' &&
+        request.url === '/api/v1/projects/project-guide/world-guide/confirm'
+    ) {
+        return json(response, 201, {
+            schemaVersion: 1,
+            ok: true,
+            data: { received: JSON.parse(body) },
+        });
+    }
     return json(response, 404, {
         schemaVersion: 1,
         ok: false,
@@ -211,6 +231,55 @@ describe('Novel Runtime bridge transport', () => {
             assert.equal(upstream.headers['last-event-id'], 'event-2');
             assert.equal(upstream.headers.authorization, `Bearer ${TOKEN}`);
             assert.equal(upstream.headers['x-novel-actor-id'], 'sillytavern:YWxpY2Ugd3JpdGVy');
+        } finally {
+            await harness.shutdown();
+        }
+    });
+
+    test('allows only fixed world-guide routes and overwrites browser actor identity', async () => {
+        const harness = await createHarness(runtimeFixture);
+        try {
+            let response = await fetch(
+                `${harness.bridgeBaseUrl}${BRIDGE_PREFIX}/v1/projects/project-guide/world-guide/proposals`,
+                {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        schemaVersion: 1,
+                        actorId: 'browser:attacker',
+                        modelProfileId: 'model-default',
+                        source: { mode: 'blank' },
+                    }),
+                },
+            );
+            assert.equal(response.status, 200);
+            let body = await response.json();
+            assert.equal(body.data.received.actorId, 'sillytavern:YWxpY2Ugd3JpdGVy');
+
+            response = await fetch(
+                `${harness.bridgeBaseUrl}${BRIDGE_PREFIX}/v1/projects/project-guide/world-guide/confirm`,
+                {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        schemaVersion: 1,
+                        actorId: 'browser:attacker',
+                        proposalId: 'proposal-1',
+                    }),
+                },
+            );
+            assert.equal(response.status, 201);
+            body = await response.json();
+            assert.equal(body.data.received.actorId, 'sillytavern:YWxpY2Ugd3JpdGVy');
+
+            const upstreamRoutes = harness.requests
+                .filter(request => request.url?.includes('/world-guide/'))
+                .map(request => request.url);
+            assert.deepEqual(upstreamRoutes, [
+                '/api/v1/projects/project-guide/world-guide/proposals',
+                '/api/v1/projects/project-guide/world-guide/confirm',
+            ]);
+            assert.equal(harness.requests.some(request => request.url?.includes('attacker')), false);
         } finally {
             await harness.shutdown();
         }

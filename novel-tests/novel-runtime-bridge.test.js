@@ -33,6 +33,8 @@ describe('novel-runtime-bridge shell', () => {
             'GET /v1/turns/:turnId/events',
             'POST /v1/turns/:turnId/cancel',
             'GET /v1/turns/:turnId/snapshot',
+            'POST /v1/projects/:projectId/world-guide/proposals',
+            'POST /v1/projects/:projectId/world-guide/confirm',
         ]);
 
         let body;
@@ -49,6 +51,8 @@ describe('novel-runtime-bridge shell', () => {
             'turn.events',
             'turn.cancel',
             'turn.snapshot',
+            'world-guide.propose',
+            'world-guide.confirm',
         ]);
 
         await exit();

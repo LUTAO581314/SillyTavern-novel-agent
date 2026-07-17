@@ -25,6 +25,8 @@ test('the loaded Runtime bridge exposes only a same-origin public health payload
             'turn.events',
             'turn.cancel',
             'turn.snapshot',
+            'world-guide.propose',
+            'world-guide.confirm',
         ],
         canonicalWrite: false,
         runtimeConfigured: true,

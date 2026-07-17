@@ -22,6 +22,129 @@
     color: var(--SmartThemeQuoteColor);
 }
 
+.novel-world-guide {
+    display: grid;
+    gap: 0.65rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0.6rem;
+    border: 1px solid var(--SmartThemeBorderColor);
+}
+
+.novel-world-guide-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.4fr);
+    gap: 0.6rem;
+    align-items: end;
+}
+
+.novel-world-guide-toolbar label {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    font-size: 0.85rem;
+}
+
+.novel-world-guide-toolbar input,
+.novel-world-guide textarea,
+.novel-world-guide-suggestion input,
+.novel-world-guide-suggestion select {
+    width: 100%;
+    min-width: 0;
+}
+
+.novel-world-guide textarea {
+    resize: vertical;
+}
+
+.novel-world-guide-sources {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-height: 2.25rem;
+    border: 1px solid var(--SmartThemeBorderColor);
+}
+
+.novel-world-guide-sources button {
+    min-width: 0;
+    padding: 0.4rem 0.25rem;
+    border: 0;
+    border-right: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 0;
+    color: var(--SmartThemeBodyColor);
+    background: transparent;
+}
+
+.novel-world-guide-sources button:last-child {
+    border-right: 0;
+}
+
+.novel-world-guide-sources button.selected {
+    color: var(--SmartThemeEmColor);
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 18%, transparent);
+}
+
+.novel-world-guide-actions,
+.novel-world-guide-suggestion-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.25rem;
+}
+
+#novel_world_guide_status,
+.novel-world-guide-trust {
+    color: var(--SmartThemeQuoteColor);
+}
+
+.novel-world-guide-questions,
+.novel-world-guide-suggestions {
+    display: grid;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.novel-world-guide-question {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.novel-world-guide-suggestion {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0.6rem;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 4px;
+}
+
+.novel-world-guide-suggestion-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.novel-world-guide-suggestion-header strong,
+.novel-world-guide-suggestion p {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.novel-world-guide-suggestion-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(7rem, 0.3fr);
+    gap: 0.5rem;
+}
+
+.novel-world-guide-suggestion-fields label {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    font-size: 0.85rem;
+}
+
 .novel-mode-headline .menu_button {
     width: 2.25rem;
     min-width: 2.25rem;
@@ -116,5 +239,10 @@
 
     .novel-mode-segments {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .novel-world-guide-toolbar,
+    .novel-world-guide-suggestion-fields {
+        grid-template-columns: minmax(0, 1fr);
     }
 }

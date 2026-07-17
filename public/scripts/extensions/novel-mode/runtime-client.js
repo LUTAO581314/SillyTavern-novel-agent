@@ -42,6 +42,20 @@ export function createNovelModeRuntimeClient({
         }));
     }
 
+    async function post(path, body, signal) {
+        return readJson(await fetchImpl(`${BRIDGE_PREFIX}${path}`, {
+            method: 'POST',
+            headers: new Headers({
+                ...Object.fromEntries(bridgeHeaders(getHeaders)),
+                'content-type': 'application/json',
+            }),
+            body: JSON.stringify(body),
+            credentials: 'same-origin',
+            redirect: 'error',
+            signal,
+        }));
+    }
+
     async function health(signal) {
         const body = await get('/health', signal);
         if (
@@ -68,5 +82,49 @@ export function createNovelModeRuntimeClient({
         return body.data;
     }
 
-    return Object.freeze({ health, snapshot });
+    async function proposeWorld(projectId, input, signal) {
+        if (typeof projectId !== 'string' || !OPAQUE_ID.test(projectId)) {
+            throw new TypeError('World guide project ID must be an opaque identifier.');
+        }
+        const body = await post(
+            `/v1/projects/${encodeURIComponent(projectId)}/world-guide/proposals`,
+            input,
+            signal,
+        );
+        if (
+            body?.schemaVersion !== 1 || body?.ok !== true || !body.data ||
+            body.data.projectId !== projectId || body.data.trust !== 'untrusted' ||
+            !Array.isArray(body.data.questions) || !Array.isArray(body.data.suggestions) ||
+            body.data.suggestions.some(suggestion => (
+                suggestion?.trust !== 'untrusted' ||
+                suggestion?.source?.kind !== 'model_suggestion' ||
+                !suggestion.item
+            ))
+        ) {
+            throw new Error('Novel Runtime returned an incompatible world guide proposal.');
+        }
+        return body.data;
+    }
+
+    async function confirmWorld(projectId, input, signal) {
+        if (typeof projectId !== 'string' || !OPAQUE_ID.test(projectId)) {
+            throw new TypeError('World guide project ID must be an opaque identifier.');
+        }
+        const body = await post(
+            `/v1/projects/${encodeURIComponent(projectId)}/world-guide/confirm`,
+            input,
+            signal,
+        );
+        if (
+            body?.schemaVersion !== 1 || body?.ok !== true || !body.data ||
+            body.data.trust !== 'untrusted' || body.data.source?.kind !== 'model_suggestion' ||
+            typeof body.data.replayed !== 'boolean' || !body.data.world ||
+            !Number.isInteger(body.data.world.revision)
+        ) {
+            throw new Error('Novel Runtime returned an incompatible world guide confirmation.');
+        }
+        return body.data;
+    }
+
+    return Object.freeze({ health, snapshot, proposeWorld, confirmWorld });
 }
