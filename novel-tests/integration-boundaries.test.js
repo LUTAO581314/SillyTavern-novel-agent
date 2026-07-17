@@ -26,7 +26,7 @@ test('S06-04 dispatches an external provider before native connection checks', (
     const generateStart = nativeGeneration.indexOf('export async function Generate(');
     const externalStart = nativeGeneration.indexOf('generationProviderRegistry.start(', generateStart);
     const serverPing = nativeGeneration.indexOf('const pingResult = await pingServer();', generateStart);
-    const nativeConnectionCheck = nativeGeneration.indexOf("const hasBackendConnection = online_status !== 'no_connection';", generateStart);
+    const nativeConnectionCheck = nativeGeneration.indexOf('const hasBackendConnection = online_status !== \'no_connection\';', generateStart);
     const stopStart = nativeGeneration.indexOf('export function stopGeneration()');
     const stopEnd = nativeGeneration.indexOf('\n}', stopStart);
 
