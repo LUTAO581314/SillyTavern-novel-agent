@@ -9,6 +9,10 @@ test('an extension provider generates and stops without a native backend connect
         const calls = [];
         let blockNext = false;
         let finishBlockedGeneration;
+        let notifyBlockedGenerationStarted;
+        const blockedGenerationStarted = new Promise(resolve => {
+            notifyBlockedGenerationStarted = resolve;
+        });
         const unregister = context.generationProviders.register({
             id: 'browser-fixture',
             isActive: () => true,
@@ -19,6 +23,7 @@ test('an extension provider generates and stops without a native backend connect
                 }
                 return new Promise(resolve => {
                     finishBlockedGeneration = resolve;
+                    notifyBlockedGenerationStarted();
                 });
             },
             cancel(reason) {
@@ -35,7 +40,7 @@ test('an extension provider generates and stops without a native backend connect
 
             blockNext = true;
             const pending = context.generate('quiet');
-            await Promise.resolve();
+            await blockedGenerationStarted;
             const stopped = context.stopGeneration();
             const stoppedValue = await pending;
 
