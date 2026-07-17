@@ -66,3 +66,14 @@ test('browser code contains no Runtime target, token, or canonical write route',
     assert.doesNotMatch(browserSource, /canon(?:ical)?\/(?:commit|write)/i);
     assert.match(browserSource, /\/api\/plugins\/novel-runtime-bridge\/health/);
 });
+
+test('the server bridge contains no database, model, MiroFish, or browser-selected target adapter', () => {
+    const bridgeSource = [
+        read('plugins/novel-runtime-bridge/index.js'),
+        read('plugins/novel-runtime-bridge/config.js'),
+        read('plugins/novel-runtime-bridge/runtime-client.js'),
+    ].join('\n');
+
+    assert.doesNotMatch(bridgeSource, /@novel\/db|\bpg\b|postgres|openai|mirofish/i);
+    assert.doesNotMatch(bridgeSource, /request\.body\.(?:baseUrl|url|target)|request\.query\.(?:baseUrl|url|target)/);
+});

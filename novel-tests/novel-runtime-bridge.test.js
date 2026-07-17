@@ -15,23 +15,41 @@ function createRouterFixture() {
         get(path, handler) {
             routes.set(`GET ${path}`, handler);
         },
+        post(path, handler) {
+            routes.set(`POST ${path}`, handler);
+        },
     };
 }
 
 describe('novel-runtime-bridge shell', () => {
-    test('loads one fixed health route and unloads without canonical routes', async () => {
+    test('loads only fixed transport routes and unloads without canonical routes', async () => {
         const router = createRouterFixture();
         await init(router, { environment: {} });
 
         assert.equal(info.id, 'novel-runtime-bridge');
-        assert.deepEqual([...router.routes.keys()], ['GET /health']);
+        assert.deepEqual([...router.routes.keys()], [
+            'GET /health',
+            'POST /v1/turns',
+            'GET /v1/turns/:turnId/events',
+            'POST /v1/turns/:turnId/cancel',
+            'GET /v1/turns/:turnId/snapshot',
+        ]);
 
         let body;
-        const response = { json(value) { body = value; } };
-        router.routes.get('GET /health')({}, response);
+        const response = {
+            status() { return this; },
+            json(value) { body = value; return this; },
+        };
+        await router.routes.get('GET /health')({}, response);
         assert.deepEqual(body, createPublicHealthPayload({ configured: false }));
         assert.equal(body.canonicalWrite, false);
-        assert.deepEqual(NOVEL_RUNTIME_BRIDGE_HEALTH_FIXTURE.capabilities, ['health']);
+        assert.deepEqual(NOVEL_RUNTIME_BRIDGE_HEALTH_FIXTURE.capabilities, [
+            'health',
+            'turn.create',
+            'turn.events',
+            'turn.cancel',
+            'turn.snapshot',
+        ]);
 
         await exit();
     });

@@ -17,6 +17,18 @@ function normalizeBaseUrl(value) {
     return `${parsed.origin}${pathname === '/' ? '' : pathname}`;
 }
 
+function readInteger(environment, name, fallback, minimum, maximum) {
+    const value = environment[name];
+    if (value === undefined || value === null || value === '') {
+        return fallback;
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > maximum) {
+        throw new Error(`${name} must be an integer from ${minimum} to ${maximum}.`);
+    }
+    return parsed;
+}
+
 export function readRuntimeConfig(environment = process.env) {
     const rawBaseUrl = typeof environment.NOVEL_RUNTIME_BASE_URL === 'string'
         ? environment.NOVEL_RUNTIME_BASE_URL.trim()
@@ -24,6 +36,20 @@ export function readRuntimeConfig(environment = process.env) {
     const token = typeof environment.NOVEL_RUNTIME_TOKEN === 'string'
         ? environment.NOVEL_RUNTIME_TOKEN
         : '';
+    const requestTimeoutMs = readInteger(
+        environment,
+        'NOVEL_RUNTIME_REQUEST_TIMEOUT_MS',
+        15_000,
+        25,
+        120_000,
+    );
+    const maximumResponseBytes = readInteger(
+        environment,
+        'NOVEL_RUNTIME_MAX_RESPONSE_BYTES',
+        2 * 1024 * 1024,
+        1024,
+        16 * 1024 * 1024,
+    );
 
     if (!rawBaseUrl) {
         if (token) {
@@ -33,6 +59,8 @@ export function readRuntimeConfig(environment = process.env) {
             configured: false,
             baseUrl: null,
             authorization: null,
+            requestTimeoutMs,
+            maximumResponseBytes,
         });
     }
     if (/[\u0000-\u001F\u007F]/.test(token)) {
@@ -43,5 +71,7 @@ export function readRuntimeConfig(environment = process.env) {
         configured: true,
         baseUrl: normalizeBaseUrl(rawBaseUrl),
         authorization: token ? `Bearer ${token}` : null,
+        requestTimeoutMs,
+        maximumResponseBytes,
     });
 }
