@@ -1,0 +1,54 @@
+{
+    "schemaVersion": 1,
+    "upstream": {
+        "repository": "https://github.com/SillyTavern/SillyTavern.git",
+        "ref": "release",
+        "baselineVersion": "1.18.0",
+        "baselineTag": "upstream-1.18.0",
+        "baselineCommit": "51ad27fb86d39a3daca3adaa970375c9670c12df"
+    },
+    "patchScopes": {
+        "isolatedPrefixes": [
+            "public/scripts/extensions/novel-mode/",
+            "plugins/novel-runtime-bridge/"
+        ],
+        "coreHooks": [
+            "public/script.js",
+            "public/scripts/generation-provider-registry.js",
+            "public/scripts/st-context.js"
+        ],
+        "verificationPrefixes": [
+            ".github/workflows/s06-",
+            ".github/workflows/s08-",
+            ".github/workflows/s14-",
+            "docs/",
+            "novel-tests/",
+            "tests/generation-provider-registry",
+            "tests/novel-mode",
+            "tests/novel-runtime-bridge"
+        ],
+        "verificationFiles": [
+            ".eslintrc.cjs",
+            ".gitignore",
+            "Dockerfile",
+            "package.json",
+            "novel-upstream-baseline.json",
+            "scripts/novel-upstream-report.mjs"
+        ],
+        "repositoryScaffold": [
+            ".vscode/settings.json",
+            "backups/!README.md",
+            "data/.gitkeep",
+            "default/scaffold/README.md",
+            "plugins/.gitkeep",
+            "plugins/package.json",
+            "public/scripts/extensions/third-party/.gitkeep"
+        ]
+    },
+    "invariants": {
+        "novelModeReadsPostgres": false,
+        "novelModeStoresProviderSecrets": false,
+        "runtimeApiVersion": 1,
+        "canonicalStateOwnedByClient": false
+    }
+}

@@ -59,6 +59,7 @@ export function readRuntimeConfig(environment = process.env) {
             configured: false,
             baseUrl: null,
             authorization: null,
+            configurationIssue: 'runtime_base_url_required',
             requestTimeoutMs,
             maximumResponseBytes,
         });
@@ -66,11 +67,23 @@ export function readRuntimeConfig(environment = process.env) {
     if (/[\u0000-\u001F\u007F]/.test(token)) {
         throw new Error('NOVEL_RUNTIME_TOKEN contains invalid control characters.');
     }
+    const baseUrl = normalizeBaseUrl(rawBaseUrl);
+    if (!token) {
+        return Object.freeze({
+            configured: false,
+            baseUrl: null,
+            authorization: null,
+            configurationIssue: 'runtime_token_required',
+            requestTimeoutMs,
+            maximumResponseBytes,
+        });
+    }
 
     return Object.freeze({
         configured: true,
-        baseUrl: normalizeBaseUrl(rawBaseUrl),
-        authorization: token ? `Bearer ${token}` : null,
+        baseUrl,
+        authorization: `Bearer ${token}`,
+        configurationIssue: null,
         requestTimeoutMs,
         maximumResponseBytes,
     });

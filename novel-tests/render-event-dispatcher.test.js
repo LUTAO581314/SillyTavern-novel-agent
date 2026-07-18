@@ -53,6 +53,9 @@ describe('Novel Render Event dispatcher', () => {
         assert.equal(dispatcher.dispatch(viewEvent('component.upsert', {
             componentId: 'component-1',
             componentType: 'narration',
+            componentVersion: 1,
+            visibility: ['author', 'player'],
+            fallbackText: 'Recovered committed passage.',
             revision: 1,
             provisional: true,
             props: { text: '<img src=x onerror=alert(1)> remains text' },
@@ -76,6 +79,9 @@ describe('Novel Render Event dispatcher', () => {
             components: [{
                 componentId: 'component-1',
                 componentType: 'narration',
+                componentVersion: 1,
+                visibility: ['author', 'player'],
+                fallbackText: 'Recovered committed passage.',
                 revision: 1,
                 provisional: true,
                 props: { text: '<img src=x onerror=alert(1)> remains text' },
@@ -128,7 +134,21 @@ describe('Novel Render Event dispatcher', () => {
         }, 3);
         assert.equal(dispatcher.dispatch(authorityDraft).status, 'fallback');
 
-        assert.equal(fallbacks.length, 4);
+        const futureComponent = viewEvent('component.upsert', {
+            componentId: 'component-future',
+            componentType: 'future-component',
+            componentVersion: 2,
+            visibility: ['author', 'player'],
+            fallbackText: '<b>Future component remains inert text.</b>',
+            revision: 1,
+            provisional: true,
+            props: {},
+        }, 4);
+        const futureResult = dispatcher.dispatch(futureComponent);
+        assert.equal(futureResult.status, 'fallback');
+        assert.equal(futureResult.fallback.text, '<b>Future component remains inert text.</b>');
+
+        assert.equal(fallbacks.length, 5);
         assert.equal(fallbacks.every(item => typeof item.text === 'string' && !item.html), true);
         assert.deepEqual(dispatcher.view, createInitialNovelView());
     });
@@ -140,5 +160,30 @@ describe('Novel Render Event dispatcher', () => {
         }));
         assert.equal(result.status, 'fallback');
         assert.equal(dispatcher.view.lastSeq, -1);
+    });
+
+    test('author view accepts only player terminal lifecycle events', () => {
+        const terminalEvents = [
+            ['turn.committed', { commitId: 'commit-player', committedAt: '2026-07-19T00:00:00.000Z' }, 'committed'],
+            ['turn.cancelled', { reason: 'user' }, 'cancelled'],
+            ['turn.failed', { code: 'MODEL_FAILED', message: 'Writer failed.', retryable: true }, 'failed'],
+            ['turn.stale', { expectedCommitId: 'commit-expected', actualCommitId: 'commit-actual' }, 'stale'],
+        ];
+        for (const [type, payload, stage] of terminalEvents) {
+            const dispatcher = new NovelRenderEventDispatcher({ audience: 'author' });
+            const result = dispatcher.dispatch(viewEvent(type, payload, 0, { audience: 'player' }));
+            assert.equal(result.status, 'applied');
+            assert.equal(dispatcher.view.stage, stage);
+        }
+
+        const dispatcher = new NovelRenderEventDispatcher({ audience: 'author' });
+        const denied = dispatcher.dispatch(viewEvent('prose.delta', {
+            blockId: 'block-player',
+            delta: 'Player prose must not duplicate the author stream.',
+            provisional: true,
+        }, 0, { audience: 'player' }));
+        assert.equal(denied.status, 'fallback');
+        assert.equal(denied.fallback.reason, 'audience-denied');
+        assert.equal(dispatcher.view.text, '');
     });
 });

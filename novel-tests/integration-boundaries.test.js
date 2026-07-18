@@ -62,6 +62,16 @@ test('browser code contains no Runtime target, token, or canonical write route',
         read('public/scripts/extensions/novel-mode/session.js'),
         read('public/scripts/extensions/novel-mode/render-event-dispatcher.js'),
         read('public/scripts/extensions/novel-mode/display-cache.js'),
+        read('public/scripts/extensions/novel-mode/workspace-client.js'),
+        read('public/scripts/extensions/novel-mode/workspace-state.js'),
+        read('public/scripts/extensions/novel-mode/component-registry.js'),
+        read('public/scripts/extensions/novel-mode/character-import.js'),
+        read('public/scripts/extensions/novel-mode/chat-import.js'),
+        read('public/scripts/extensions/novel-mode/world-info-import.js'),
+        read('public/scripts/extensions/novel-mode/workspace-actions.js'),
+        read('public/scripts/extensions/novel-mode/workspace-render.js'),
+        read('public/scripts/extensions/novel-mode/workspace-controller.js'),
+        read('public/scripts/extensions/novel-mode/release-session-client.js'),
         read('public/scripts/extensions/novel-mode/settings.html'),
     ].join('\n');
 
@@ -73,10 +83,24 @@ test('browser code contains no Runtime target, token, or canonical write route',
     // Novel Mode may mutate turns only through the fixed same-origin bridge.
     assert.match(browserSource, /method:\s*['"]POST['"]/);
     assert.match(browserSource, /BRIDGE_PREFIX\}\/v1\/turns/);
+    assert.match(browserSource, /v1\/workspace/);
+    assert.match(browserSource, /data-novel-workspace="story"/);
+    assert.match(browserSource, /data-novel-workspace="world"/);
+    assert.match(browserSource, /data-novel-workspace="director"/);
+    assert.match(browserSource, /option value="chat"/);
+    assert.match(browserSource, /option value="swipe"/);
+    assert.match(browserSource, /createChatImportSource/);
+    assert.match(browserSource, /previewChatImport/);
+    assert.match(browserSource, /confirmChatImport/);
+    assert.match(browserSource, /Canonical/);
+    assert.match(browserSource, /novel-share/);
+    assert.match(browserSource, /povEntityId/);
+    assert.match(browserSource, /modelProfileId/);
     assert.match(browserSource, /BRIDGE_PREFIX\}\/v1\/turns\/\$\{encodeURIComponent\(turnId\)\}\/cancel/);
     assert.match(browserSource, /BRIDGE_PREFIX\}\/v1\/turns\/\$\{encodeURIComponent\(turnId\)\}\/accept/);
     assert.doesNotMatch(browserSource, /generationProviders\.register|@novel\/db|postgres|openai|mirofish/i);
     assert.doesNotMatch(browserSource, /baseUrl|targetUrl|runtimeUrl/i);
+    assert.doesNotMatch(browserSource, /localStorage/);
 });
 
 test('the server bridge contains no database, model, MiroFish, or browser-selected target adapter', () => {
@@ -88,4 +112,16 @@ test('the server bridge contains no database, model, MiroFish, or browser-select
 
     assert.doesNotMatch(bridgeSource, /@novel\/db|\bpg\b|postgres|openai|mirofish/i);
     assert.doesNotMatch(bridgeSource, /request\.body\.(?:baseUrl|url|target)|request\.query\.(?:baseUrl|url|target)/);
+    assert.match(bridgeSource, /BRIDGE_WORKSPACE_ROUTE_NOT_ALLOWED/);
+    assert.match(bridgeSource, /request\.user\?\.profile\.admin/);
+    assert.match(bridgeSource, /return request\.user\.profile\.admin \? 'author' : 'player'/);
+    assert.match(bridgeSource, /Player access cannot request an author workspace view/);
+    assert.match(bridgeSource, /Player access cannot submit director commands/);
+    assert.match(bridgeSource, /const mode = accessRole === 'player' \? 'play'/);
+    assert.match(bridgeSource, /requireAuthorRole\(context\)/);
+    assert.match(bridgeSource, /playerProjectCatalog/);
+    assert.match(bridgeSource, /\/v1\/releases\/:releaseId/);
+    assert.match(bridgeSource, /\/v1\/sessions\/:sessionId\/reconnect/);
+    assert.match(bridgeSource, /\/share\/:shareToken/);
+    assert.match(bridgeSource, /BRIDGE_TURN_PAYLOAD_FORBIDDEN/);
 });

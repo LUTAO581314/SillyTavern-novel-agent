@@ -73,11 +73,24 @@ export function createNovelModeRuntimeClient({
         return body.data;
     }
 
-    async function createTurn({ projectId, branchId, chapterId, sceneId, inputMode, inputText, turnId, mode = 'cowrite' }, signal) {
+    async function createTurn({
+        projectId,
+        branchId,
+        chapterId,
+        sceneId,
+        povEntityId,
+        modelProfileId,
+        inputMode,
+        inputText,
+        turnId,
+        mode = 'cowrite',
+    }, signal) {
         requireOpaqueId(projectId, 'Project ID');
         requireOpaqueId(branchId, 'Branch ID');
         requireOpaqueId(chapterId, 'Chapter ID');
         requireOpaqueId(sceneId, 'Scene ID');
+        requireOpaqueId(povEntityId, 'POV entity ID');
+        requireOpaqueId(modelProfileId, 'Model profile ID');
         requireOpaqueId(turnId, 'Turn ID');
         if (!['act', 'speak', 'narrate', 'direct'].includes(inputMode)) throw new TypeError('Input mode is invalid.');
         const headers = bridgeHeaders(getHeaders);
@@ -92,6 +105,8 @@ export function createNovelModeRuntimeClient({
                 projectId,
                 branchId,
                 mode,
+                povEntityId,
+                modelProfileId,
                 turn: { id: turnId, chapterId, sceneId, inputMode, inputText },
             }),
             signal,
@@ -154,8 +169,39 @@ export function createNovelModeRuntimeClient({
         }));
     }
 
+    async function approval(turnId, {
+        projectId,
+        proposalId = null,
+        attemptId = null,
+        planId = null,
+    } = {}, signal) {
+        requireOpaqueId(turnId, 'Turn ID');
+        requireOpaqueId(projectId, 'Project ID');
+        const query = new URLSearchParams({ projectId });
+        for (const [key, value] of [['proposalId', proposalId], ['attemptId', attemptId], ['planId', planId]]) {
+            if (value != null && value !== '') query.set(key, requireOpaqueId(value, key));
+        }
+        const body = await get(`/v1/turns/${encodeURIComponent(turnId)}/approval?${query.toString()}`, signal);
+        if (
+            body?.schemaVersion !== 1 || body?.ok !== true || !body.data
+            || typeof body.data.proposalId !== 'string'
+            || typeof body.data.attemptId !== 'string'
+            || typeof body.data.planId !== 'string'
+            || typeof body.data.turnId !== 'string'
+            || typeof body.data.baseCommitId !== 'string'
+            || !/^[a-f0-9]{64}$/.test(body.data.digest)
+        ) throw new Error('Novel Runtime returned an incompatible approval reference.');
+        return body.data;
+    }
+
     async function accept(turnId, payload, signal) {
         requireOpaqueId(turnId, 'Turn ID');
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+            throw new TypeError('Approval payload must be a Runtime-issued reference.');
+        }
+        for (const key of ['projectId', 'proposalId', 'attemptId', 'planId', 'referenceDigest', 'idempotencyKey']) {
+            requireOpaqueId(payload[key], key);
+        }
         const headers = bridgeHeaders(getHeaders);
         headers.set('content-type', 'application/json');
         return readJson(await fetchImpl(`${BRIDGE_PREFIX}/v1/turns/${encodeURIComponent(turnId)}/accept`, {
@@ -164,5 +210,5 @@ export function createNovelModeRuntimeClient({
         }));
     }
 
-    return Object.freeze({ health, snapshot, createTurn, events, cancel, accept });
+    return Object.freeze({ health, snapshot, createTurn, events, cancel, approval, accept });
 }

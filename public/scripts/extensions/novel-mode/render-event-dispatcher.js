@@ -1,5 +1,9 @@
+import {
+    novelComponentFallbackText,
+    validateNovelComponentPayload,
+} from './component-registry.js';
+
 const OPAQUE_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
-const UNSAFE_COMPONENT_KEY = /^(?:__proto__|prototype|constructor|html|innerhtml|outerhtml|script|srcdoc|dangerouslysetinnerhtml|on[a-z]+)$/i;
 
 export const SUPPORTED_RENDER_EVENT_TYPES = Object.freeze([
     'turn.accepted',
@@ -21,18 +25,13 @@ export const SUPPORTED_RENDER_EVENT_TYPES = Object.freeze([
 ]);
 
 const SUPPORTED_TYPES = new Set(SUPPORTED_RENDER_EVENT_TYPES);
-const AUTHORITY_COMPONENT_TYPES = new Set(['character-status', 'location-status']);
-const COMPONENT_TYPES = new Set([
-    'narration',
-    'dialogue',
-    'choice-set',
-    'character-status',
-    'location-status',
-    'artifact',
-    'image-scene',
-    'audio-cue',
-]);
 const AUTHOR_ONLY_TYPES = new Set(['plan.ready', 'state.preview']);
+const PLAYER_TERMINAL_TYPES_VISIBLE_TO_AUTHOR = new Set([
+    'turn.committed',
+    'turn.cancelled',
+    'turn.failed',
+    'turn.stale',
+]);
 const STAGES = new Set([
     'planning',
     'writing',
@@ -63,36 +62,6 @@ function isOpaqueId(value) {
 
 function isNonNegativeInteger(value) {
     return Number.isInteger(value) && value >= 0;
-}
-
-function isSafeJson(value, seen = new Set()) {
-    if (value === null || typeof value === 'string' || typeof value === 'boolean') {
-        return true;
-    }
-    if (typeof value === 'number') {
-        return Number.isFinite(value);
-    }
-    if (typeof value !== 'object' || seen.has(value)) {
-        return false;
-    }
-    seen.add(value);
-    if (Array.isArray(value)) {
-        const valid = value.every(child => isSafeJson(child, seen));
-        seen.delete(value);
-        return valid;
-    }
-    if (!isPlainObject(value)) {
-        seen.delete(value);
-        return false;
-    }
-    for (const [key, child] of Object.entries(value)) {
-        if (!key || key.length > 128 || UNSAFE_COMPONENT_KEY.test(key) || !isSafeJson(child, seen)) {
-            seen.delete(value);
-            return false;
-        }
-    }
-    seen.delete(value);
-    return true;
 }
 
 function requirePayloadObject(payload) {
@@ -129,10 +98,10 @@ export function createInitialNovelView() {
     };
 }
 
-function fallbackFor(reason) {
+function fallbackFor(reason, text = 'This Novel event cannot be displayed by the current client version.') {
     return Object.freeze({
         reason,
-        text: 'This Novel event cannot be displayed by the current client version.',
+        text,
     });
 }
 
@@ -163,8 +132,8 @@ export class NovelRenderEventDispatcher {
         return this.view;
     }
 
-    #fallback(reason) {
-        const fallback = fallbackFor(reason);
+    #fallback(reason, text) {
+        const fallback = fallbackFor(reason, text);
         this.#onFallback(fallback);
         return { status: 'fallback', fallback };
     }
@@ -197,16 +166,7 @@ export class NovelRenderEventDispatcher {
                 break;
             case 'component.upsert': {
                 const componentId = requireOpaqueId(value.componentId, 'Component ID');
-                if (!COMPONENT_TYPES.has(value.componentType)) throw new TypeError('Unknown component type.');
-                if (!isNonNegativeInteger(value.revision)) throw new TypeError('Invalid component revision.');
-                if (typeof value.provisional !== 'boolean') throw new TypeError('Invalid provisional marker.');
-                if (AUTHORITY_COMPONENT_TYPES.has(value.componentType) && value.provisional) {
-                    throw new TypeError('Authority components cannot be provisional.');
-                }
-                if (!isPlainObject(value.props) || !isSafeJson(value.props)) {
-                    throw new TypeError('Unsafe component properties.');
-                }
-                const component = clone(value);
+                const component = validateNovelComponentPayload(value, { audience: event.audience });
                 const index = this.#view.components.findIndex(item => item.componentId === componentId);
                 if (index >= 0 && this.#view.components[index].revision > component.revision) {
                     throw new TypeError('Component revision moved backwards.');
@@ -240,6 +200,20 @@ export class NovelRenderEventDispatcher {
             case 'turn.awaiting_approval':
                 requireString(value.summary, 'Approval summary', 2_000);
                 if (!isNonNegativeInteger(value.blockingIssueCount)) throw new TypeError('Invalid issue count.');
+                if (value.approvalReference !== undefined) {
+                    const reference = value.approvalReference;
+                    if (
+                        !isPlainObject(reference)
+                        || !isOpaqueId(reference.proposalId)
+                        || !isOpaqueId(reference.attemptId)
+                        || !isOpaqueId(reference.planId)
+                        || !isOpaqueId(reference.turnId)
+                        || reference.turnId !== event.turn_id
+                        || !isOpaqueId(reference.baseCommitId)
+                        || typeof reference.digest !== 'string'
+                        || !/^[a-f0-9]{64}$/.test(reference.digest)
+                    ) throw new TypeError('Invalid approval reference.');
+                }
                 this.#view.stage = 'awaiting_approval';
                 break;
             case 'turn.committed':
@@ -296,7 +270,13 @@ export class NovelRenderEventDispatcher {
         ) {
             return this.#fallback('invalid-envelope');
         }
-        if (event.audience !== this.#audience || (this.#audience !== 'author' && AUTHOR_ONLY_TYPES.has(event.render.type))) {
+        const authorTerminal = this.#audience === 'author'
+            && event.audience === 'player'
+            && PLAYER_TERMINAL_TYPES_VISIBLE_TO_AUTHOR.has(event.render.type);
+        if (
+            (!authorTerminal && event.audience !== this.#audience)
+            || (this.#audience !== 'author' && AUTHOR_ONLY_TYPES.has(event.render.type))
+        ) {
             return this.#fallback('audience-denied');
         }
         if (this.#seenEventIds.has(event.event_id) || event.seq <= this.#view.lastSeq) {
@@ -305,7 +285,10 @@ export class NovelRenderEventDispatcher {
         try {
             this.#apply(event);
         } catch {
-            return this.#fallback('invalid-payload');
+            const fallbackText = event.render.type === 'component.upsert'
+                ? novelComponentFallbackText(event.render.payload, { audience: event.audience })
+                : undefined;
+            return this.#fallback('invalid-payload', fallbackText);
         }
         this.#seenEventIds.add(event.event_id);
         this.#view.turnId = event.turn_id;

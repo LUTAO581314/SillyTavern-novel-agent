@@ -6,6 +6,8 @@ const BINDING_KEYS = new Set([
     'branchId',
     'chapterId',
     'sceneId',
+    'povEntityId',
+    'modelProfileId',
     'resumeTurnId',
     'audience',
 ]);
@@ -36,6 +38,8 @@ function validateBinding(value) {
         branchId: opaque(value.branchId, 'branch ID'),
         chapterId: opaque(value.chapterId, 'chapter ID'),
         sceneId: opaque(value.sceneId, 'scene ID'),
+        povEntityId: opaque(value.povEntityId, 'POV entity ID'),
+        modelProfileId: opaque(value.modelProfileId, 'model profile ID'),
         resumeTurnId: opaque(value.resumeTurnId, 'resume turn ID', true),
         audience: value.audience,
     });
@@ -47,6 +51,7 @@ export class NovelModeSession {
     #onFallback;
     #runtimeClient;
     #activeTurnId = null;
+    #approvalReference = null;
 
     constructor({ runtimeClient, onFallback = () => {} } = {}) {
         if (!runtimeClient || typeof runtimeClient.snapshot !== 'function') {
@@ -67,6 +72,10 @@ export class NovelModeSession {
         return this.#dispatcher.view;
     }
 
+    get approvalReference() {
+        return this.#approvalReference ? { ...this.#approvalReference } : null;
+    }
+
     canUseMode(mode) {
         if (!NOVEL_INPUT_MODES.includes(mode) || !this.#binding) return false;
         return this.#binding.audience === 'author' || PLAYER_MODES.has(mode);
@@ -84,11 +93,44 @@ export class NovelModeSession {
         }
         this.#binding = binding;
         this.#dispatcher = dispatcher;
+        this.#approvalReference = null;
+        if (
+            this.view.stage === 'awaiting_approval'
+            && binding.audience === 'author'
+            && typeof this.#runtimeClient.approval === 'function'
+        ) {
+            try {
+                this.#approvalReference = await this.#runtimeClient.approval(this.view.turnId, {
+                    projectId: binding.projectId,
+                }, signal);
+            } catch {
+                this.#approvalReference = null;
+            }
+        }
         return this.view;
     }
 
     clearDisplay() {
         return this.#dispatcher.reset();
+    }
+
+    unbind() {
+        this.#binding = null;
+        this.#activeTurnId = null;
+        this.#approvalReference = null;
+        this.#dispatcher = new NovelRenderEventDispatcher({
+            onFallback: this.#onFallback,
+        });
+        return this.view;
+    }
+
+    restorePlayerEvents(events) {
+        if (!this.#binding || this.#binding.audience !== 'player') {
+            throw new Error('Player recovery requires a bound player session.');
+        }
+        if (!Array.isArray(events)) throw new TypeError('Player recovery events must be an array.');
+        this.#dispatcher.dispatchAll(events);
+        return this.view;
     }
 
     createInputIntent(mode, text) {
@@ -107,6 +149,8 @@ export class NovelModeSession {
                 branchId: this.#binding.branchId,
                 chapterId: this.#binding.chapterId,
                 sceneId: this.#binding.sceneId,
+                povEntityId: this.#binding.povEntityId,
+                modelProfileId: this.#binding.modelProfileId,
             },
         };
     }
@@ -129,7 +173,23 @@ export class NovelModeSession {
             signal,
             onEvent: event => {
                 this.#dispatcher.dispatch(event);
+                if (
+                    event.render?.type === 'turn.awaiting_approval'
+                    && this.#binding.audience === 'author'
+                    && typeof this.#runtimeClient.approval === 'function'
+                ) {
+                    return this.#runtimeClient.approval(this.#activeTurnId, {
+                        projectId: this.#binding.projectId,
+                    }, signal).then((reference) => {
+                        this.#approvalReference = reference;
+                        onUpdate(this.view, { ...event, approvalReference: reference });
+                    }).catch(() => {
+                        this.#approvalReference = null;
+                        onUpdate(this.view, event);
+                    });
+                }
                 onUpdate(this.view, event);
+                return undefined;
             },
         });
         return this.view;
@@ -144,6 +204,42 @@ export class NovelModeSession {
 
     async acceptTurn(payload, signal) {
         if (!this.#activeTurnId || typeof this.#runtimeClient.accept !== 'function') throw new Error('No active Novel turn can be accepted.');
-        return this.#runtimeClient.accept(this.#activeTurnId, payload, signal);
+        const reference = payload || this.#approvalReference;
+        if (!reference || typeof reference !== 'object') throw new Error('No Runtime approval reference is available.');
+        const approval = {
+            projectId: reference.projectId || this.#binding?.projectId,
+            proposalId: reference.proposalId,
+            attemptId: reference.attemptId,
+            planId: reference.planId,
+            referenceDigest: reference.referenceDigest || reference.digest,
+            idempotencyKey: reference.idempotencyKey
+                || `approval:${this.#activeTurnId}:${reference.proposalId}`,
+        };
+        const turnId = this.#activeTurnId;
+        const result = await this.#runtimeClient.accept(turnId, approval, signal);
+        const status = result?.data?.status || result?.status;
+        const commitId = result?.data?.commit?.commitId || result?.data?.commitId || result?.commit?.commitId;
+        // Some Runtime deployments finish the transaction in the accept response
+        // without emitting a second SSE frame. Keep the display state identical
+        // on both transports by adding one client-side, server-confirmed event.
+        if (status === 'committed' && commitId && this.#dispatcher.view.stage !== 'committed') {
+            this.#dispatcher.dispatch({
+                schema_version: 1,
+                event_id: `client-commit-${turnId}`,
+                turn_id: turnId,
+                seq: this.#dispatcher.view.lastSeq + 1,
+                audience: this.#binding?.audience || 'author',
+                render: {
+                    schemaVersion: 1,
+                    type: 'turn.committed',
+                    payload: {
+                        commitId,
+                        committedAt: new Date().toISOString(),
+                    },
+                },
+            });
+        }
+        this.#activeTurnId = null;
+        return result;
     }
 }

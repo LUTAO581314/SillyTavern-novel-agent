@@ -1,0 +1,124 @@
+name: S14 SillyTavern upstream rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_ref:
+        description: SillyTavern upstream branch or tag
+        required: false
+        default: release
+  pull_request:
+    paths:
+      - 'public/script.js'
+      - 'public/scripts/generation-provider-registry.js'
+      - 'public/scripts/st-context.js'
+      - 'public/scripts/extensions/novel-mode/**'
+      - 'plugins/novel-runtime-bridge/**'
+      - 'Dockerfile'
+      - 'novel-tests/**'
+      - 'novel-upstream-baseline.json'
+      - 'scripts/novel-upstream-report.mjs'
+      - '.github/workflows/s14-upstream-rehearsal.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  rehearse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Record local patch ledger
+        run: node scripts/novel-upstream-report.mjs --check | tee "$RUNNER_TEMP/novel-upstream-report.json"
+      - name: Fetch current SillyTavern upstream
+        env:
+          UPSTREAM_REF: ${{ inputs.upstream_ref || 'release' }}
+        run: |
+          git remote add sillytavern-upstream https://github.com/SillyTavern/SillyTavern.git
+          git fetch --no-tags sillytavern-upstream "+refs/heads/${UPSTREAM_REF}:refs/remotes/sillytavern-upstream/rehearsal"
+      - name: Rehearse upstream merge
+        run: |
+          if ! git merge --no-commit --no-ff refs/remotes/sillytavern-upstream/rehearsal; then
+            git diff --name-only --diff-filter=U | tee "$RUNNER_TEMP/novel-upstream-conflicts.txt"
+            exit 1
+          fi
+      - name: Install locked dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm ci --ignore-scripts --prefix tests
+      - run: npm run test:novel
+      - run: npm run test:unit --prefix tests -- --runInBand
+      - run: npm run lint
+      - run: npx eslint scripts/novel-upstream-report.mjs
+      - name: Install Chromium
+        working-directory: tests
+        run: npx playwright install --with-deps chromium
+      - name: Enable the trusted Novel Runtime bridge
+        run: |
+          cp default/config.yaml config.yaml
+          sed -i 's/^enableServerPlugins: false$/enableServerPlugins: true/' config.yaml
+          sed -i 's/^enableServerPluginsAutoUpdate: true$/enableServerPluginsAutoUpdate: false/' config.yaml
+      - name: Regress normal and Novel browser paths
+        timeout-minutes: 8
+        run: |
+          export NOVEL_RUNTIME_BASE_URL=http://127.0.0.1:8787
+          export NOVEL_RUNTIME_TOKEN=fixture-runtime-token
+          runtime_pid=''
+          server_pid=''
+          node novel-tests/fixtures/runtime-snapshot-server.js > "$RUNNER_TEMP/novel-runtime-fixture.log" 2>&1 &
+          runtime_pid=$!
+          trap 'kill "$server_pid" "$runtime_pid" 2>/dev/null || true' EXIT
+          runtime_ready=false
+          for _ in {1..30}; do
+            if curl --max-time 2 --fail --silent \
+              -H 'Authorization: Bearer fixture-runtime-token' \
+              http://127.0.0.1:8787/api/health > /dev/null; then
+              runtime_ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$runtime_ready" != true ]]; then
+            cat "$RUNNER_TEMP/novel-runtime-fixture.log"
+            exit 1
+          fi
+          npm start > "$RUNNER_TEMP/sillytavern.log" 2>&1 &
+          server_pid=$!
+          ready=false
+          for _ in {1..45}; do
+            if curl --max-time 2 --fail --silent http://127.0.0.1:8000/ > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != true ]]; then
+            cat "$RUNNER_TEMP/sillytavern.log"
+            exit 1
+          fi
+          npm run test:e2e --prefix tests -- \
+            generation-provider-registry.e2e.js \
+            novel-runtime-bridge.e2e.js \
+            novel-mode-shell.e2e.js \
+            novel-mode-share.e2e.js \
+            novel-mode-workspaces.e2e.js \
+            novel-mode-golden-path.e2e.js \
+            --timeout=60000
+      - name: Upload rehearsal evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: s14-upstream-rehearsal
+          path: |
+            ${{ runner.temp }}/novel-upstream-report.json
+            ${{ runner.temp }}/novel-upstream-conflicts.txt
+            ${{ runner.temp }}/novel-runtime-fixture.log
+            ${{ runner.temp }}/sillytavern.log
+          if-no-files-found: ignore

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
 import { createNovelMessageCache } from '../public/scripts/extensions/novel-mode/display-cache.js';
+import { createInitialNovelView } from '../public/scripts/extensions/novel-mode/render-event-dispatcher.js';
 import { NovelModeSession } from '../public/scripts/extensions/novel-mode/session.js';
 import { createNovelModeRuntimeClient } from '../public/scripts/extensions/novel-mode/runtime-client.js';
 
@@ -63,11 +64,26 @@ describe('Novel Mode binding shell', () => {
                 async cancel(turnId, reason) { calls.push({ type: 'cancel', turnId, reason }); return { ok: true }; },
             },
         });
-        await session.bind({ projectId: 'project-live', branchId: 'branch-live', chapterId: 'chapter-live', sceneId: 'scene-live', audience: 'author' });
+        await session.bind({
+            projectId: 'project-live',
+            branchId: 'branch-live',
+            chapterId: 'chapter-live',
+            sceneId: 'scene-live',
+            povEntityId: 'entity-pov-live',
+            modelProfileId: 'model-profile-live',
+            audience: 'author',
+        });
         const view = await session.submitTurn('act', 'Open the sealed door.');
         assert.equal(view.turnId, 'turn-live');
         assert.equal(view.text, 'A live paragraph.');
-        await session.acceptTurn({ proposal: 'writer-draft' });
+        await session.acceptTurn({
+            projectId: 'project-live',
+            proposalId: 'proposal-writer',
+            attemptId: 'attempt-writer',
+            planId: 'plan-writer',
+            referenceDigest: 'a'.repeat(64),
+            idempotencyKey: 'approval-writer',
+        });
         await session.cancelTurn('user');
         assert.deepEqual(calls.map(call => call.type), ['create', 'events', 'accept', 'cancel']);
         assert.equal(calls[0].input.inputMode, 'act');
@@ -126,13 +142,26 @@ describe('Novel Mode binding shell', () => {
                 return Response.json({ schemaVersion: 1, ok: true, data: { status: 'cancelled' } });
             },
         });
-        const created = await client.createTurn({ projectId: 'project-live', branchId: 'branch-live', chapterId: 'chapter-live', sceneId: 'scene-live', inputMode: 'act', inputText: 'Open', turnId: 'turn-live' });
+        const created = await client.createTurn({
+            projectId: 'project-live',
+            branchId: 'branch-live',
+            chapterId: 'chapter-live',
+            sceneId: 'scene-live',
+            povEntityId: 'entity-pov-live',
+            modelProfileId: 'model-profile-live',
+            inputMode: 'act',
+            inputText: 'Open',
+            turnId: 'turn-live',
+        });
         const events = [];
         await client.events(created.turnId, { onEvent: event => events.push(event) });
         await client.cancel(created.turnId, 'user');
         assert.equal(created.streamId, 'stream-live');
         assert.equal(events[0].event_id, 'event-1');
         assert.equal(requests[0].options.headers.get('idempotency-key'), 'turn-live');
+        const turnBody = JSON.parse(requests[0].options.body);
+        assert.equal(turnBody.povEntityId, 'entity-pov-live');
+        assert.equal(turnBody.modelProfileId, 'model-profile-live');
         assert.equal(requests[1].options.headers.get('accept'), 'text/event-stream');
         assert.equal(requests[2].url.endsWith('/turns/turn-live/cancel'), true);
     });
@@ -153,6 +182,8 @@ describe('Novel Mode binding shell', () => {
             branchId: 'branch-main',
             chapterId: 'chapter-1',
             sceneId: 'scene-1',
+            povEntityId: 'entity-pov-1',
+            modelProfileId: 'model-profile-1',
             resumeTurnId: 'turn-recovery',
             audience: 'author',
         };
@@ -170,6 +201,8 @@ describe('Novel Mode binding shell', () => {
                 branchId: 'branch-main',
                 chapterId: 'chapter-1',
                 sceneId: 'scene-1',
+                povEntityId: 'entity-pov-1',
+                modelProfileId: 'model-profile-1',
             },
         });
         assert.equal(typeof session.submitTurn, 'function');
@@ -215,5 +248,26 @@ describe('Novel Mode binding shell', () => {
         });
         assert.equal('claims' in cache, false);
         assert.equal('projection' in cache, false);
+    });
+
+    test('unbinding clears stale branch authority before a workspace context switch', async () => {
+        const session = new NovelModeSession({
+            runtimeClient: { snapshot: async () => ({ events: [] }) },
+        });
+        await session.bind({
+            projectId: 'project-1',
+            branchId: 'branch-old',
+            chapterId: 'chapter-1',
+            sceneId: 'scene-1',
+            povEntityId: 'entity-pov-1',
+            modelProfileId: 'model-profile-1',
+            resumeTurnId: null,
+            audience: 'author',
+        });
+        assert.equal(session.canUseMode('direct'), true);
+        const view = session.unbind();
+        assert.equal(session.binding, null);
+        assert.equal(session.canUseMode('act'), false);
+        assert.deepEqual(view, createInitialNovelView());
     });
 });

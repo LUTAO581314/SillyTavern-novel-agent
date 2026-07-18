@@ -6,26 +6,19 @@ test('Novel Mode binds, enforces input permissions, and restores without chat hi
 
     const root = page.locator('#novel_mode_settings');
     await expect(root).toBeAttached();
-    await root.locator('#novel_mode_enabled').evaluate(element => {
-        element.checked = true;
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+    await expect(root.locator('#novel_mode_enabled')).toBeChecked();
     await expect(root.locator('#novel_mode_runtime_status')).toHaveText('Ready');
+    await expect(root.locator('#novel_mode_workspace')).toBeVisible();
 
-    await root.evaluate(element => {
-        const values = {
-            novel_mode_project: 'project-1',
-            novel_mode_branch: 'branch-main',
-            novel_mode_chapter: 'chapter-1',
-            novel_mode_scene: 'scene-1',
-            novel_mode_resume_turn: 'turn-recovery',
-            novel_mode_audience: 'author',
-        };
-        for (const [id, value] of Object.entries(values)) {
-            element.querySelector(`#${id}`).value = value;
-        }
-        element.querySelector('#novel_mode_bind').click();
-    });
+    await root.locator('#novel_mode_project').fill('project-workspace');
+    await root.locator('#novel_mode_branch').fill('branch-main');
+    await root.locator('#novel_mode_chapter').fill('chapter-workspace');
+    await root.locator('#novel_mode_scene').fill('scene-workspace');
+    await root.locator('#novel_mode_pov_entity').selectOption('entity-player-pov');
+    await root.locator('#novel_mode_model_profile').fill('model-profile-workspace');
+    await root.locator('#novel_mode_resume_turn').fill('turn-recovery');
+    await root.locator('#novel_mode_audience').selectOption('author');
+    await root.locator('#novel_mode_bind').click();
 
     await expect(root.locator('#novel_mode_binding_status')).toHaveText('Restored');
     await expect(root.locator('#novel_mode_committed_view')).toHaveText('Recovered committed passage.');

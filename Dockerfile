@@ -1,4 +1,5 @@
-FROM node:lts-alpine3.23
+# Keep the semantic tag and OCI index digest together when updating Node.
+FROM node:22.16.0-alpine3.22@sha256:41e4389f3d988d2ed55392df4db1420ad048ae53324a8e2b7c6d19508288107e
 
 # Arguments
 ARG APP_HOME=/home/node/app

@@ -31,6 +31,7 @@ function buildUrl(config, path) {
 function createHeaders(config, {
     accept = 'application/json',
     actorId = null,
+    actorRole = null,
     correlationId,
     idempotencyKey = null,
     lastEventId = null,
@@ -46,6 +47,9 @@ function createHeaders(config, {
     }
     if (actorId) {
         headers.set('x-novel-actor-id', actorId);
+    }
+    if (actorRole) {
+        headers.set('x-novel-actor-role', actorRole);
     }
     if (idempotencyKey) {
         headers.set('idempotency-key', idempotencyKey);
@@ -221,6 +225,7 @@ export function createRuntimeClient(config, { fetchImpl = globalThis.fetch } = {
         path,
         method = 'GET',
         actorId = null,
+        actorRole = null,
         body,
         idempotencyKey = null,
         correlationId,
@@ -233,6 +238,7 @@ export function createRuntimeClient(config, { fetchImpl = globalThis.fetch } = {
                 method,
                 headers: createHeaders(config, {
                     actorId,
+                    actorRole,
                     correlationId,
                     idempotencyKey,
                     withBody,
@@ -266,9 +272,63 @@ export function createRuntimeClient(config, { fetchImpl = globalThis.fetch } = {
         }
     }
 
+    async function requestHtml({
+        path,
+        actorId = null,
+        actorRole = null,
+        correlationId,
+        signal,
+    }) {
+        const scope = createAbortScope(config.requestTimeoutMs, signal);
+        try {
+            const response = await fetchImpl(buildUrl(config, path), {
+                method: 'GET',
+                headers: createHeaders(config, {
+                    accept: 'text/html',
+                    actorId,
+                    actorRole,
+                    correlationId,
+                }),
+                redirect: 'error',
+                signal: scope.signal,
+            });
+            const text = await readLimitedBody(response, config.maximumResponseBytes);
+            if (!response.ok) {
+                let publicBody = null;
+                try {
+                    publicBody = sanitizeApiError(JSON.parse(text), correlationId);
+                } catch {
+                    // Non-JSON upstream failures are deliberately replaced.
+                }
+                if (publicBody) return { status: response.status, body: publicBody, contentType: 'application/json' };
+                throw new RuntimeBridgeError(
+                    'RUNTIME_REQUEST_FAILED',
+                    'Novel Runtime rejected the document request.',
+                    502,
+                    response.status >= 500,
+                );
+            }
+            const contentType = response.headers.get('content-type')?.toLowerCase() ?? '';
+            if (!contentType.startsWith('text/html')) {
+                throw new RuntimeBridgeError(
+                    'RUNTIME_DOCUMENT_INVALID',
+                    'Novel Runtime returned a non-HTML release document.',
+                    502,
+                    false,
+                );
+            }
+            return { status: response.status, body: text, contentType };
+        } catch (error) {
+            throw normalizeFailure(error, scope);
+        } finally {
+            scope.cleanup();
+        }
+    }
+
     async function openEventStream({
         path,
         actorId,
+        actorRole = null,
         correlationId,
         lastEventId = null,
         signal,
@@ -280,6 +340,7 @@ export function createRuntimeClient(config, { fetchImpl = globalThis.fetch } = {
                 headers: createHeaders(config, {
                     accept: 'text/event-stream',
                     actorId,
+                    actorRole,
                     correlationId,
                     lastEventId,
                 }),
@@ -325,7 +386,7 @@ export function createRuntimeClient(config, { fetchImpl = globalThis.fetch } = {
         }
     }
 
-    return Object.freeze({ requestJson, openEventStream });
+    return Object.freeze({ requestJson, requestHtml, openEventStream });
 }
 
 export async function pipeEventStream(stream, response) {

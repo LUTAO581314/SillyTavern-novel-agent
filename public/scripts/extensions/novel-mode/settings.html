@@ -19,12 +19,23 @@
                 </button>
             </div>
 
+            <button id="novel_mode_open_studio" class="menu_button novel-mode-open-studio" type="button">
+                <i class="fa-solid fa-feather-pointed" aria-hidden="true"></i>
+                <span>Open Novel Studio</span>
+            </button>
+
             <fieldset id="novel_mode_binding" class="novel-mode-binding">
                 <legend>Story context</legend>
                 <label>Project<input id="novel_mode_project" type="text" maxlength="128" autocomplete="off"></label>
                 <label>Branch<input id="novel_mode_branch" type="text" maxlength="128" autocomplete="off"></label>
                 <label>Chapter<input id="novel_mode_chapter" type="text" maxlength="128" autocomplete="off"></label>
                 <label>Scene<input id="novel_mode_scene" type="text" maxlength="128" autocomplete="off"></label>
+                <label>POV entity
+                    <select id="novel_mode_pov_entity" autocomplete="off">
+                        <option value="">Select POV entity</option>
+                    </select>
+                </label>
+                <label>Model profile<input id="novel_mode_model_profile" type="text" maxlength="128" autocomplete="off" value="model-default"></label>
                 <label>Recovery turn<input id="novel_mode_resume_turn" type="text" maxlength="128" autocomplete="off"></label>
                 <label>Audience
                     <select id="novel_mode_audience">
@@ -62,7 +73,220 @@
             <div class="novel-mode-recovery" aria-live="polite">
                 <span id="novel_mode_committed_view"></span>
                 <span class="novel-mode-component-count"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span id="novel_mode_component_count">0</span></span>
+                <div id="novel_mode_committed_components" class="novel-mode-stage-components"></div>
             </div>
+
+            <section id="novel_mode_workspace" class="novel-mode-workspace" hidden aria-label="Novel Studio">
+                <header class="novel-mode-workspace-header">
+                    <div>
+                        <p class="novel-mode-kicker">Novel Studio</p>
+                        <h2 id="novel_mode_workspace_title">Untitled story</h2>
+                        <span id="novel_mode_workspace_status" class="novel-mode-binding-status" aria-live="polite">Not connected</span>
+                    </div>
+                    <button id="novel_mode_close_studio" class="menu_button" type="button" title="Close Novel Studio" aria-label="Close Novel Studio">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </header>
+
+                <nav class="novel-mode-workspace-tabs" role="tablist" aria-label="Novel workspaces">
+                    <button type="button" role="tab" id="novel_mode_tab_story" aria-controls="novel_mode_panel_story" data-novel-workspace="story" aria-selected="true">
+                        <i class="fa-solid fa-book-open" aria-hidden="true"></i><span>Story</span>
+                    </button>
+                    <button type="button" role="tab" id="novel_mode_tab_world" aria-controls="novel_mode_panel_world" data-novel-workspace="world" aria-selected="false">
+                        <i class="fa-solid fa-globe" aria-hidden="true"></i><span>World</span>
+                    </button>
+                    <button type="button" role="tab" id="novel_mode_tab_director" aria-controls="novel_mode_panel_director" data-novel-workspace="director" aria-selected="false">
+                        <i class="fa-solid fa-compass-drafting" aria-hidden="true"></i><span>Director</span>
+                    </button>
+                </nav>
+
+                <div class="novel-mode-workspace-body">
+                    <section id="novel_mode_panel_story" data-novel-workspace-panel="story" role="tabpanel" aria-labelledby="novel_mode_tab_story" aria-label="Story workspace">
+                        <div class="novel-mode-workspace-grid novel-mode-story-grid">
+                            <aside class="novel-mode-workspace-rail">
+                                <div class="novel-mode-panel-heading">
+                                    <span class="novel-mode-kicker">Project</span>
+                                    <button id="novel_mode_workspace_refresh" class="menu_button" type="button" title="Refresh projects" aria-label="Refresh projects">
+                                        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <label>Project
+                                    <select id="novel_mode_workspace_project" autocomplete="off"></select>
+                                </label>
+                                <label>Inspiration
+                                    <textarea id="novel_mode_story_inspiration" rows="3" maxlength="20000" placeholder="A sentence is enough."></textarea>
+                                </label>
+                                <button id="novel_mode_new_story" class="menu_button" type="button">
+                                    <i class="fa-solid fa-plus" aria-hidden="true"></i><span>New story</span>
+                                </button>
+                                <label>Chapter
+                                    <select id="novel_mode_workspace_chapter" autocomplete="off"></select>
+                                </label>
+                                <label>Scene
+                                    <select id="novel_mode_workspace_scene" autocomplete="off"></select>
+                                </label>
+                                <div class="novel-mode-progress" aria-label="World startup progress">
+                                    <span class="novel-mode-kicker">Startup</span>
+                                    <ol id="novel_mode_onboarding_steps">
+                                        <li data-novel-step="inspiration">Inspiration</li>
+                                        <li data-novel-step="guide">Guide</li>
+                                        <li data-novel-step="lock">Lock world</li>
+                                        <li data-novel-step="opening">Opening</li>
+                                        <li data-novel-step="stage">Stage</li>
+                                    </ol>
+                                </div>
+                            </aside>
+                            <div class="novel-mode-stage-column">
+                                    <div id="novel_mode_stage_canvas" class="novel-mode-stage-canvas" aria-live="polite">
+                                        <div class="novel-mode-stage-meta">
+                                            <span id="novel_mode_stage_location">No scene selected</span>
+                                            <span id="novel_mode_stage_tick">Story tick --</span>
+                                            <button type="button" class="menu_button novel-mode-drawer-toggle" data-novel-drawer-toggle="story-inspector" aria-controls="novel_mode_story_inspector" aria-expanded="false" title="Open Story inspector" aria-label="Open Story inspector">
+                                                <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    <article id="novel_mode_stage_text" class="novel-mode-stage-text">
+                                        <p class="novel-mode-empty">Choose a project and opening route to enter the stage.</p>
+                                    </article>
+                                    <div id="novel_mode_stage_components" class="novel-mode-stage-components"></div>
+                                </div>
+                                <div class="novel-mode-route-bar">
+                                    <label>Opening route
+                                        <select id="novel_mode_opening_route"></select>
+                                    </label>
+                                    <button id="novel_mode_enter_stage" class="menu_button" type="button">
+                                        <i class="fa-solid fa-door-open" aria-hidden="true"></i><span>Enter stage</span>
+                                    </button>
+                                </div>
+                                <div class="novel-mode-turn-inline">
+                                    <div class="novel-mode-segments" role="group" aria-label="Novel input mode">
+                                        <button type="button" data-novel-workspace-mode="act" aria-pressed="true">Act</button>
+                                        <button type="button" data-novel-workspace-mode="speak" aria-pressed="false">Speak</button>
+                                        <button type="button" data-novel-workspace-mode="narrate" aria-pressed="false">Narrate</button>
+                                        <button type="button" data-novel-workspace-mode="direct" aria-pressed="false">Direct</button>
+                                    </div>
+                                    <textarea id="novel_mode_workspace_input" rows="3" maxlength="64000" placeholder="Take an action, speak, narrate, or direct."></textarea>
+                                    <div class="novel-mode-turn-actions">
+                                        <button id="novel_mode_workspace_submit" class="menu_button" type="button" title="Send stage turn" aria-label="Send stage turn">
+                                            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>Send</span>
+                                        </button>
+                                        <button id="novel_mode_workspace_stop" class="menu_button" type="button" title="Stop stage turn" aria-label="Stop stage turn">
+                                            <i class="fa-solid fa-stop" aria-hidden="true"></i><span>Stop</span>
+                                        </button>
+                                        <button id="novel_mode_workspace_retry" class="menu_button" type="button" title="Retry last stage turn" aria-label="Retry last stage turn">
+                                            <i class="fa-solid fa-rotate-right" aria-hidden="true"></i><span>Retry</span>
+                                        </button>
+                                        <button id="novel_mode_workspace_accept" class="menu_button" type="button" title="Accept canonical proposal" aria-label="Accept canonical proposal">
+                                            <i class="fa-solid fa-check" aria-hidden="true"></i><span>Accept</span>
+                                        </button>
+                                        <span id="novel_mode_workspace_turn_status" aria-live="polite">Idle</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <aside id="novel_mode_story_inspector" class="novel-mode-panel novel-mode-story-inspector" data-novel-drawer="story-inspector" aria-label="Story inspector">
+                                <div class="novel-mode-panel-heading">
+                                    <h3>Story inspector</h3>
+                                    <button type="button" class="menu_button novel-mode-drawer-close" data-novel-drawer-toggle="story-inspector" title="Close Story inspector" aria-label="Close Story inspector" aria-controls="novel_mode_story_inspector" aria-expanded="false">
+                                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <dl class="novel-mode-inspector-list">
+                                    <div><dt>Status</dt><dd id="novel_mode_story_inspector_status">Idle</dd></div>
+                                    <div><dt>World</dt><dd id="novel_mode_story_inspector_world">Not loaded</dd></div>
+                                    <div><dt>Branch</dt><dd id="novel_mode_story_inspector_branch">--</dd></div>
+                                    <div><dt>Access</dt><dd id="novel_mode_story_inspector_access">--</dd></div>
+                                </dl>
+                                <p class="novel-mode-empty">Canonical acceptance stays disabled until the Runtime supplies a complete proposal payload.</p>
+                            </aside>
+                        </div>
+                    </section>
+
+                    <section id="novel_mode_panel_world" data-novel-workspace-panel="world" role="tabpanel" aria-labelledby="novel_mode_tab_world" aria-label="World workspace" hidden>
+                        <div class="novel-mode-workspace-grid novel-mode-world-grid">
+                            <div class="novel-mode-panel">
+                                <div class="novel-mode-panel-heading"><h3>World guide</h3><span id="novel_mode_guide_status" aria-live="polite">Draft</span></div>
+                                <label>Inspiration or source
+                                    <textarea id="novel_mode_guide_input" rows="5" maxlength="64000" placeholder="A sentence, outline, or imported premise."></textarea>
+                                </label>
+                                <div class="novel-mode-button-row">
+                                    <button id="novel_mode_propose_guide" class="menu_button" type="button"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i><span>Generate guide</span></button>
+                                    <button id="novel_mode_import_guide" class="menu_button" type="button"><i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Use source</span></button>
+                                </div>
+                                <div id="novel_mode_guide_questions" class="novel-mode-guide-questions"></div>
+                                <div id="novel_mode_guide_suggestions" class="novel-mode-guide-suggestions"></div>
+                            </div>
+                            <div class="novel-mode-panel">
+                                <div class="novel-mode-panel-heading"><h3>World bible</h3><span id="novel_mode_world_status" aria-live="polite">Not loaded</span></div>
+                                <div id="novel_mode_world_validation" class="novel-mode-validation" aria-live="polite"></div>
+                                <div id="novel_mode_world_items" class="novel-mode-world-items"></div>
+                                <div class="novel-mode-button-row">
+                                    <button id="novel_mode_validate_world" class="menu_button" type="button"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>Validate</span></button>
+                                    <button id="novel_mode_lock_world" class="menu_button" type="button"><i class="fa-solid fa-lock" aria-hidden="true"></i><span>Lock world</span></button>
+                                    <button id="novel_mode_reopen_world" class="menu_button" type="button" disabled><i class="fa-solid fa-lock-open" aria-hidden="true"></i><span>Reopen</span></button>
+                                </div>
+                            </div>
+                            <div class="novel-mode-panel novel-mode-import-panel">
+                                <div class="novel-mode-panel-heading"><h3>Content import</h3><span id="novel_mode_character_import_status" aria-live="polite">No preview</span></div>
+                                <label>Source format
+                                    <select id="novel_mode_character_import_kind">
+                                        <option value="character-card">Character Card</option>
+                                        <option value="charx">CHARX</option>
+                                        <option value="world-info">World Info</option>
+                                        <option value="chat">Current chat</option>
+                                        <option value="swipe">Current swipe alternatives</option>
+                                    </select>
+                                </label>
+                                <div class="novel-mode-button-row">
+                                    <button id="novel_mode_character_import_preview" class="menu_button" type="button"><i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview selected source</span></button>
+                                    <button id="novel_mode_character_import_confirm" class="menu_button" type="button" disabled><i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Confirm import</span></button>
+                                </div>
+                                <div id="novel_mode_character_import_summary" class="novel-mode-import-summary" aria-live="polite"></div>
+                            </div>
+                            <div class="novel-mode-panel novel-mode-span-all">
+                                <div class="novel-mode-panel-heading"><h3>Story architecture</h3><span>Director view</span></div>
+                                <div id="novel_mode_world_architecture" class="novel-mode-world-architecture"></div>
+                            </div>
+                            <div class="novel-mode-panel novel-mode-span-all">
+                                <div class="novel-mode-panel-heading"><h3>Performance preview</h3><span>Opening presentation</span></div>
+                                <div id="novel_mode_performance_preview" class="novel-mode-performance-preview"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="novel_mode_panel_director" data-novel-workspace-panel="director" role="tabpanel" aria-labelledby="novel_mode_tab_director" aria-label="Director workspace" hidden>
+                        <div class="novel-mode-workspace-grid novel-mode-director-grid">
+                            <div class="novel-mode-panel">
+                                <div class="novel-mode-panel-heading"><h3>Director control</h3><span id="novel_mode_director_status" aria-live="polite">Author only</span></div>
+                                <label>Audience
+                                    <select id="novel_mode_workspace_audience">
+                                        <option value="author">Author</option>
+                                        <option value="player">Player</option>
+                                    </select>
+                                </label>
+                                <label>Branch ID<input id="novel_mode_workspace_branch" type="text" maxlength="128" autocomplete="off"></label>
+                                <button id="novel_mode_load_branch" class="menu_button" type="button"><i class="fa-solid fa-code-branch" aria-hidden="true"></i><span>Load branch</span></button>
+                                <div id="novel_mode_director_summary" class="novel-mode-director-summary"></div>
+                            </div>
+                            <div class="novel-mode-panel">
+                                <div class="novel-mode-panel-heading"><h3>Runtime trace</h3><button id="novel_mode_refresh_trace" class="menu_button" type="button" title="Refresh trace" aria-label="Refresh trace"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></button></div>
+                                <div id="novel_mode_director_trace" class="novel-mode-trace" aria-live="polite"><p class="novel-mode-empty">No trace loaded.</p></div>
+                            </div>
+                            <div class="novel-mode-panel novel-mode-span-all">
+                                <div class="novel-mode-panel-heading">
+                                    <h3>Recall diagnostic</h3>
+                                    <span id="novel_mode_recall_status" aria-live="polite">No Context Pack</span>
+                                </div>
+                                <div class="novel-mode-recall-controls">
+                                    <label>Context Pack ID<input id="novel_mode_context_pack" type="text" maxlength="128" autocomplete="off"></label>
+                                    <label>POV entity ID<input id="novel_mode_recall_pov" type="text" maxlength="128" autocomplete="off"></label>
+                                    <button id="novel_mode_refresh_recall" class="menu_button" type="button" title="Refresh recall diagnostic" aria-label="Refresh recall diagnostic"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+                                </div>
+                                <div id="novel_mode_recall_diagnostic" class="novel-mode-recall-diagnostic" aria-live="polite"><p class="novel-mode-empty">No recall trace loaded.</p></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </section>
         </div>
     </div>
 </div>
