@@ -7,6 +7,7 @@ export const NOVEL_RUNTIME_BRIDGE_HEALTH_FIXTURE = Object.freeze({
         'turn.create',
         'turn.events',
         'turn.cancel',
+        'turn.accept',
         'turn.snapshot',
     ]),
     canonicalWrite: false,

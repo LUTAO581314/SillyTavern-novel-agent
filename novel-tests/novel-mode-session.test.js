@@ -71,7 +71,7 @@ describe('Novel Mode binding shell', () => {
         await session.cancelTurn('user');
         assert.deepEqual(calls.map(call => call.type), ['create', 'events', 'accept', 'cancel']);
         assert.equal(calls[0].input.inputMode, 'act');
-        assert.equal(calls[2].reason, 'user');
+        assert.equal(calls[3].reason, 'user');
     });
 
     test('uses only fixed same-origin health and snapshot routes', async () => {
@@ -172,7 +172,11 @@ describe('Novel Mode binding shell', () => {
                 sceneId: 'scene-1',
             },
         });
-        assert.equal(typeof session.submitTurn, 'undefined');
+        assert.equal(typeof session.submitTurn, 'function');
+        await assert.rejects(
+            () => session.submitTurn('act', 'Cannot submit from snapshot-only client.'),
+            /does not support turn streaming/i,
+        );
 
         const cache = createNovelMessageCache(view);
         assert.deepEqual(Object.keys(cache), [

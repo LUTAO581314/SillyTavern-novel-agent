@@ -105,6 +105,13 @@ function runtimeFixture(request, response, body) {
             data: { turnId: 'turn-fixed-target', status: 'cancelling' },
         });
     }
+    if (request.method === 'POST' && request.url === '/api/v1/turns/turn-fixed-target/accept') {
+        return json(response, 202, {
+            schemaVersion: 1,
+            ok: true,
+            data: { turnId: 'turn-fixed-target', status: 'accepted' },
+        });
+    }
     if (request.method === 'GET' && request.url === '/api/v1/turns/turn-fixed-target/snapshot') {
         return json(response, 200, {
             schemaVersion: 1,
@@ -161,6 +168,13 @@ describe('Novel Runtime bridge transport', () => {
             });
             assert.equal(response.status, 202);
 
+            response = await fetch(`${harness.bridgeBaseUrl}${BRIDGE_PREFIX}/v1/turns/turn-fixed-target/accept`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ proposal: 'writer-draft' }),
+            });
+            assert.equal(response.status, 202);
+
             response = await fetch(`${harness.bridgeBaseUrl}${BRIDGE_PREFIX}/v1/turns/turn-fixed-target/snapshot`);
             assert.equal(response.status, 200);
             assert.equal((await response.json()).data.lastEventId, 'event-4');
@@ -177,6 +191,8 @@ describe('Novel Runtime bridge transport', () => {
                 targetUrl: 'https://attacker.invalid/',
             });
             assert.equal(harness.requests.some(request => request.url?.includes('attacker.invalid')), false);
+            const acceptRequest = harness.requests.find(request => request.url === '/api/v1/turns/turn-fixed-target/accept');
+            assert.deepEqual(JSON.parse(acceptRequest.body), { proposal: 'writer-draft' });
         } finally {
             await harness.shutdown();
         }

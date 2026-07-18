@@ -32,6 +32,7 @@ describe('novel-runtime-bridge shell', () => {
             'POST /v1/turns',
             'GET /v1/turns/:turnId/events',
             'POST /v1/turns/:turnId/cancel',
+            'POST /v1/turns/:turnId/accept',
             'GET /v1/turns/:turnId/snapshot',
         ]);
 
@@ -48,6 +49,7 @@ describe('novel-runtime-bridge shell', () => {
             'turn.create',
             'turn.events',
             'turn.cancel',
+            'turn.accept',
             'turn.snapshot',
         ]);
 

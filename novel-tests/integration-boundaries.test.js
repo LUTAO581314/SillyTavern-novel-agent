@@ -70,7 +70,11 @@ test('browser code contains no Runtime target, token, or canonical write route',
     assert.doesNotMatch(browserSource, /canon(?:ical)?\/(?:commit|write)/i);
     assert.match(browserSource, /\/api\/plugins\/novel-runtime-bridge/);
     assert.match(browserSource, /get\('\/health'/);
-    assert.doesNotMatch(browserSource, /method:\s*['"]POST['"]/);
+    // Novel Mode may mutate turns only through the fixed same-origin bridge.
+    assert.match(browserSource, /method:\s*['"]POST['"]/);
+    assert.match(browserSource, /BRIDGE_PREFIX\/v1\/turns/);
+    assert.match(browserSource, /BRIDGE_PREFIX\/v1\/turns\/\$\{encodeURIComponent\(turnId\)\}\/cancel/);
+    assert.match(browserSource, /BRIDGE_PREFIX\/v1\/turns\/\$\{encodeURIComponent\(turnId\)\}\/accept/);
     assert.doesNotMatch(browserSource, /generationProviders\.register|@novel\/db|postgres|openai|mirofish/i);
     assert.doesNotMatch(browserSource, /baseUrl|targetUrl|runtimeUrl/i);
 });
