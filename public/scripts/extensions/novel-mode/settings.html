@@ -46,6 +46,19 @@
                 <button type="button" data-novel-mode="direct" aria-pressed="false">Direct</button>
             </div>
 
+            <div class="novel-mode-turn" aria-label="Novel turn input">
+                <textarea id="novel_mode_input" rows="3" maxlength="64000" placeholder="Describe an action, line, or direction."></textarea>
+                <div class="novel-mode-turn-actions">
+                    <button id="novel_mode_submit" class="menu_button" type="button" title="Send Novel turn" aria-label="Send Novel turn">
+                        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>Send</span>
+                    </button>
+                    <button id="novel_mode_stop" class="menu_button" type="button" title="Stop Novel turn" aria-label="Stop Novel turn">
+                        <i class="fa-solid fa-stop" aria-hidden="true"></i><span>Stop</span>
+                    </button>
+                    <span id="novel_mode_turn_status" aria-live="polite">Idle</span>
+                </div>
+            </div>
+
             <div class="novel-mode-recovery" aria-live="polite">
                 <span id="novel_mode_committed_view"></span>
                 <span class="novel-mode-component-count"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span id="novel_mode_component_count">0</span></span>

@@ -1,0 +1,28 @@
+name: S08 SillyTavern Novel Mode vertical slice
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/s08-novel-mode]
+    paths:
+      - 'public/scripts/extensions/novel-mode/**'
+      - 'plugins/novel-runtime-bridge/**'
+      - 'novel-tests/**'
+      - '.github/workflows/s08-novel-mode.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:novel
+      - run: npm run lint -- --no-warn-ignored

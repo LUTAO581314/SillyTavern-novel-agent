@@ -46,6 +46,7 @@ export class NovelModeSession {
     #dispatcher = new NovelRenderEventDispatcher();
     #onFallback;
     #runtimeClient;
+    #activeTurnId = null;
 
     constructor({ runtimeClient, onFallback = () => {} } = {}) {
         if (!runtimeClient || typeof runtimeClient.snapshot !== 'function') {
@@ -108,5 +109,41 @@ export class NovelModeSession {
                 sceneId: this.#binding.sceneId,
             },
         };
+    }
+
+    async submitTurn(mode, text, { signal, onUpdate = () => {} } = {}) {
+        if (!this.#binding) throw new Error('Novel project context is not bound.');
+        if (typeof this.#runtimeClient.createTurn !== 'function' || typeof this.#runtimeClient.events !== 'function') {
+            throw new Error('Novel Runtime client does not support turn streaming.');
+        }
+        const intent = this.createInputIntent(mode, text);
+        const turnId = globalThis.crypto?.randomUUID?.() || `turn-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const created = await this.#runtimeClient.createTurn({
+            ...intent.binding,
+            inputMode: intent.mode,
+            inputText: intent.text,
+            turnId,
+        }, signal);
+        this.#activeTurnId = created.turnId || turnId;
+        await this.#runtimeClient.events(this.#activeTurnId, {
+            signal,
+            onEvent: event => {
+                this.#dispatcher.dispatch(event);
+                onUpdate(this.view, event);
+            },
+        });
+        return this.view;
+    }
+
+    async cancelTurn(reason = 'user', signal) {
+        if (!this.#activeTurnId || typeof this.#runtimeClient.cancel !== 'function') return null;
+        const result = await this.#runtimeClient.cancel(this.#activeTurnId, reason, signal);
+        this.#activeTurnId = null;
+        return result;
+    }
+
+    async acceptTurn(payload, signal) {
+        if (!this.#activeTurnId || typeof this.#runtimeClient.accept !== 'function') throw new Error('No active Novel turn can be accepted.');
+        return this.#runtimeClient.accept(this.#activeTurnId, payload, signal);
     }
 }

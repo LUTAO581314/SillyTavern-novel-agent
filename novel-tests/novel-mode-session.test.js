@@ -42,6 +42,38 @@ function snapshotEvents() {
 }
 
 describe('Novel Mode binding shell', () => {
+    test('submits one turn through Runtime and applies streamed Render Events', async () => {
+        const calls = [];
+        const session = new NovelModeSession({
+            runtimeClient: {
+                async snapshot() { return { events: [] }; },
+                async createTurn(input) { calls.push({ type: 'create', input }); return { turnId: 'turn-live' }; },
+                async events(turnId, { onEvent }) {
+                    calls.push({ type: 'events', turnId });
+                    await onEvent({
+                        schema_version: 1, event_id: 'event-accepted', turn_id: turnId, seq: 0, audience: 'author',
+                        render: { schemaVersion: 1, type: 'turn.accepted', payload: { baseCommitId: 'commit-base', mode: 'cowrite' } },
+                    });
+                    await onEvent({
+                        schema_version: 1, event_id: 'event-prose', turn_id: turnId, seq: 1, audience: 'author',
+                        render: { schemaVersion: 1, type: 'prose.delta', payload: { blockId: 'block-live', delta: 'A live paragraph.', provisional: true } },
+                    });
+                },
+                async accept(turnId) { calls.push({ type: 'accept', turnId }); return { ok: true }; },
+                async cancel(turnId, reason) { calls.push({ type: 'cancel', turnId, reason }); return { ok: true }; },
+            },
+        });
+        await session.bind({ projectId: 'project-live', branchId: 'branch-live', chapterId: 'chapter-live', sceneId: 'scene-live', audience: 'author' });
+        const view = await session.submitTurn('act', 'Open the sealed door.');
+        assert.equal(view.turnId, 'turn-live');
+        assert.equal(view.text, 'A live paragraph.');
+        await session.acceptTurn({ proposal: 'writer-draft' });
+        await session.cancelTurn('user');
+        assert.deepEqual(calls.map(call => call.type), ['create', 'events', 'accept', 'cancel']);
+        assert.equal(calls[0].input.inputMode, 'act');
+        assert.equal(calls[2].reason, 'user');
+    });
+
     test('uses only fixed same-origin health and snapshot routes', async () => {
         const requests = [];
         const client = createNovelModeRuntimeClient({
@@ -81,6 +113,28 @@ describe('Novel Mode binding shell', () => {
         ]);
         assert.equal(requests.every(item => item.options.credentials === 'same-origin'), true);
         await assert.rejects(() => client.snapshot('https://attacker.invalid/'), /opaque identifier/i);
+    });
+
+    test('creates a turn, consumes SSE Render Events, and sends cancellation', async () => {
+        const requests = [];
+        const client = createNovelModeRuntimeClient({
+            getHeaders: () => ({ 'x-csrf-token': 'csrf-only' }),
+            fetchImpl: async (url, options) => {
+                requests.push({ url, options });
+                if (url.endsWith('/turns')) return Response.json({ schemaVersion: 1, ok: true, data: { id: 'stream-live', turn_id: 'turn-live' } });
+                if (url.endsWith('/events')) return new Response('id: event-1\nevent: prose.delta\ndata: {"schema_version":1,"event_id":"event-1","turn_id":"turn-live","seq":0,"audience":"author","render":{"schemaVersion":1,"type":"prose.delta","payload":{"blockId":"block-live","delta":"Live","provisional":true}}}\n\n', { status: 200, headers: { 'content-type': 'text/event-stream' } });
+                return Response.json({ schemaVersion: 1, ok: true, data: { status: 'cancelled' } });
+            },
+        });
+        const created = await client.createTurn({ projectId: 'project-live', branchId: 'branch-live', chapterId: 'chapter-live', sceneId: 'scene-live', inputMode: 'act', inputText: 'Open', turnId: 'turn-live' });
+        const events = [];
+        await client.events(created.turnId, { onEvent: event => events.push(event) });
+        await client.cancel(created.turnId, 'user');
+        assert.equal(created.streamId, 'stream-live');
+        assert.equal(events[0].event_id, 'event-1');
+        assert.equal(requests[0].options.headers.get('idempotency-key'), 'turn-live');
+        assert.equal(requests[1].options.headers.get('accept'), 'text/event-stream');
+        assert.equal(requests[2].url.endsWith('/turns/turn-live/cancel'), true);
     });
 
     test('restores the committed view after local display cache is cleared', async () => {

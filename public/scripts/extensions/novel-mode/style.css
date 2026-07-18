@@ -87,6 +87,27 @@
     background: color-mix(in srgb, var(--SmartThemeQuoteColor) 18%, transparent);
 }
 
+.novel-mode-turn {
+    display: grid;
+    gap: 0.5rem;
+}
+
+#novel_mode_input {
+    width: 100%;
+    min-height: 5rem;
+    resize: vertical;
+}
+
+.novel-mode-turn-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#novel_mode_turn_status {
+    color: var(--SmartThemeQuoteColor);
+}
+
 .novel-mode-recovery {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

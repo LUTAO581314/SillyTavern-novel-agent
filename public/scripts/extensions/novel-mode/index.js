@@ -59,7 +59,7 @@ function updateModeControls(settings) {
 }
 
 function setShellEnabled(settings) {
-    const controls = document.querySelectorAll('#novel_mode_binding input, #novel_mode_binding select, #novel_mode_bind');
+    const controls = document.querySelectorAll('#novel_mode_binding input, #novel_mode_binding select, #novel_mode_bind, #novel_mode_input, #novel_mode_submit, #novel_mode_stop');
     controls.forEach(control => {
         if ('disabled' in control) control.disabled = !settings.enabled;
     });
@@ -162,9 +162,14 @@ async function mount() {
     const refresh = element('novel_mode_refresh');
     const bind = element('novel_mode_bind');
     const audience = element('novel_mode_audience');
+    const input = element('novel_mode_input');
+    const submit = element('novel_mode_submit');
+    const stop = element('novel_mode_stop');
     if (
         !root || !(enabled instanceof HTMLInputElement) || !(refresh instanceof HTMLButtonElement) ||
-        !(bind instanceof HTMLButtonElement) || !(audience instanceof HTMLSelectElement)
+        !(bind instanceof HTMLButtonElement) || !(audience instanceof HTMLSelectElement) ||
+        !(input instanceof HTMLTextAreaElement) || !(submit instanceof HTMLButtonElement) ||
+        !(stop instanceof HTMLButtonElement)
     ) {
         root?.remove();
         throw new Error('Novel Mode settings shell failed to mount.');
@@ -188,6 +193,36 @@ async function mount() {
         if (health?.runtimeReachable) await restoreBinding(settings);
     });
     audience.addEventListener('change', () => updateModeControls(settings));
+    submit.addEventListener('click', async () => {
+        const text = input.value.trim();
+        if (!text || !settings.enabled || !session.canUseMode(settings.inputMode)) return;
+        setText('novel_mode_turn_status', 'Writing');
+        submit.disabled = true;
+        stop.disabled = false;
+        try {
+            await session.submitTurn(settings.inputMode, text, {
+                onUpdate: view => renderCommittedView(view),
+            });
+            input.value = '';
+            setText('novel_mode_turn_status', 'Complete');
+        } catch (error) {
+            if (error?.name !== 'AbortError') console.warn('Novel turn failed.', error);
+            setText('novel_mode_turn_status', 'Failed');
+        } finally {
+            submit.disabled = !settings.enabled;
+            stop.disabled = true;
+        }
+    });
+    stop.addEventListener('click', async () => {
+        stop.disabled = true;
+        try {
+            await session.cancelTurn('user');
+            setText('novel_mode_turn_status', 'Cancelled');
+        } catch (error) {
+            console.warn('Novel turn cancellation failed.', error);
+            setText('novel_mode_turn_status', 'Cancel failed');
+        }
+    });
     root.querySelectorAll('[data-novel-mode]').forEach(button => {
         button.addEventListener('click', () => {
             const mode = button.dataset.novelMode;

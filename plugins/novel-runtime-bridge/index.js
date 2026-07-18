@@ -203,6 +203,20 @@ export async function init(router, {
         sendJsonResult(response, result);
     }));
 
+    router.post('/v1/turns/:turnId/accept', route(async (request, response, context) => {
+        const turnId = requireOpaqueId(request.params.turnId, 'Turn ID');
+        const body = readObjectBody(request);
+        const result = await runtimeClient.requestJson({
+            path: `/api/v1/turns/${encodeURIComponent(turnId)}/accept`,
+            method: 'POST',
+            actorId: context.actorId,
+            body,
+            correlationId: context.correlationId,
+            signal: context.signal,
+        });
+        sendJsonResult(response, result);
+    }));
+
     router.get('/v1/turns/:turnId/snapshot', route(async (request, response, context) => {
         const turnId = requireOpaqueId(request.params.turnId, 'Turn ID');
         const result = await runtimeClient.requestJson({
