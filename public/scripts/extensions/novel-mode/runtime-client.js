@@ -14,11 +14,6 @@ function requireOpaqueId(value, label) {
     return value;
 }
 
-function requestId() {
-    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-    return `novel-turn-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
 async function readJson(response) {
     let body;
     try {
