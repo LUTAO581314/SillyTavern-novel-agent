@@ -25,4 +25,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:novel
-      - run: npm run lint -- --no-warn-ignored
+      - run: npm run lint
