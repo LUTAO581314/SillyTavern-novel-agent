@@ -111,49 +111,49 @@ export function reduceWorkspaceState(previous, event) {
             state.projects = list(event.projects);
             break;
         case 'project.bound':
-            {
-                const previousRouteId = state.project?.id === event.project?.id
-                    ? state.openingRoute?.routeId
-                    : null;
-                state.project = clone(event.project) || null;
-                state.chapters = list(event.chapters);
-                state.scenes = list(event.scenes);
-                state.branch = clone(event.branch) || null;
-                state.world = clone(event.world) || null;
-                state.povOptions = list(event.workbench?.povOptions);
-                state.selectedPovEntityId = optionalId(event.workbench?.selectedPovEntityId);
-                state.workbench = clone(event.workbench) || null;
-                state.access = {
-                    ...state.access,
-                    ...(clone(event.workbench?.access) || {}),
-                };
-                state.audience = event.workbench?.access?.audience || state.audience;
-                state.director = clone(event.workbench?.director) || null;
-                state.performance = clone(event.workbench?.performance)
+        {
+            const previousRouteId = state.project?.id === event.project?.id
+                ? state.openingRoute?.routeId
+                : null;
+            state.project = clone(event.project) || null;
+            state.chapters = list(event.chapters);
+            state.scenes = list(event.scenes);
+            state.branch = clone(event.branch) || null;
+            state.world = clone(event.world) || null;
+            state.povOptions = list(event.workbench?.povOptions);
+            state.selectedPovEntityId = optionalId(event.workbench?.selectedPovEntityId);
+            state.workbench = clone(event.workbench) || null;
+            state.access = {
+                ...state.access,
+                ...(clone(event.workbench?.access) || {}),
+            };
+            state.audience = event.workbench?.access?.audience || state.audience;
+            state.director = clone(event.workbench?.director) || null;
+            state.performance = clone(event.workbench?.performance)
                     || { routes: [], packs: [], activePack: null };
-                state.recall = { available: false, entries: [] };
-                state.guide = clone(event.guide) || null;
-                state.openingRoutes = worldOpeningRoutes(state.world);
-                state.openingRoute = clone(event.openingRoute)
+            state.recall = { available: false, entries: [] };
+            state.guide = clone(event.guide) || null;
+            state.openingRoutes = worldOpeningRoutes(state.world);
+            state.openingRoute = clone(event.openingRoute)
                     || state.openingRoutes.find(route => route.routeId === event.routeId)
                     || state.openingRoutes.find(route => route.routeId === previousRouteId)
                     || null;
-                const selectedSceneId = state.openingRoute?.sceneId || state.scenes[0]?.id || null;
-                const selectedScene = state.scenes.find(scene => scene.id === selectedSceneId);
-                state.selection = {
-                    chapterId: selectedScene?.chapterId || state.chapters[0]?.id || null,
-                    sceneId: selectedSceneId,
-                };
-                state.onboarding = deriveOnboardingStep({
-                    project: state.project,
-                    guide: state.guide,
-                    world: state.world,
-                    openingRoute: state.openingRoute,
-                    stage: state.stage,
-                });
-                state.error = null;
-                break;
-            }
+            const selectedSceneId = state.openingRoute?.sceneId || state.scenes[0]?.id || null;
+            const selectedScene = state.scenes.find(scene => scene.id === selectedSceneId);
+            state.selection = {
+                chapterId: selectedScene?.chapterId || state.chapters[0]?.id || null,
+                sceneId: selectedSceneId,
+            };
+            state.onboarding = deriveOnboardingStep({
+                project: state.project,
+                guide: state.guide,
+                world: state.world,
+                openingRoute: state.openingRoute,
+                stage: state.stage,
+            });
+            state.error = null;
+            break;
+        }
         case 'workbench.loaded':
             state.workbench = clone(event.workbench) || null;
             state.access = {

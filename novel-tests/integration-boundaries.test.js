@@ -113,7 +113,7 @@ test('the server bridge contains no database, model, MiroFish, or browser-select
     assert.doesNotMatch(bridgeSource, /@novel\/db|\bpg\b|postgres|openai|mirofish/i);
     assert.doesNotMatch(bridgeSource, /request\.body\.(?:baseUrl|url|target)|request\.query\.(?:baseUrl|url|target)/);
     assert.match(bridgeSource, /BRIDGE_WORKSPACE_ROUTE_NOT_ALLOWED/);
-    assert.match(bridgeSource, /request\.user\?\.profile\.admin/);
+    assert.match(bridgeSource, /typeof request\.user\.profile\.admin !== 'boolean'/);
     assert.match(bridgeSource, /return request\.user\.profile\.admin \? 'author' : 'player'/);
     assert.match(bridgeSource, /Player access cannot request an author workspace view/);
     assert.match(bridgeSource, /Player access cannot submit director commands/);

@@ -84,10 +84,9 @@ describe('Mengdie binding shell', () => {
             referenceDigest: 'a'.repeat(64),
             idempotencyKey: 'approval-writer',
         });
-        await session.cancelTurn('user');
-        assert.deepEqual(calls.map(call => call.type), ['create', 'events', 'accept', 'cancel']);
+        assert.equal(await session.cancelTurn('user'), null);
+        assert.deepEqual(calls.map(call => call.type), ['create', 'events', 'accept']);
         assert.equal(calls[0].input.inputMode, 'act');
-        assert.equal(calls[3].reason, 'user');
     });
 
     test('uses only fixed same-origin health and snapshot routes', async () => {

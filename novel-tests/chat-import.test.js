@@ -79,7 +79,13 @@ test('workspace client exposes fixed chat and swipe import routes', async () => 
                 schemaVersion: 1,
                 ok: true,
                 data: url.endsWith('/confirm')
-                    ? { importId: 'chat-client-import', sourceDigest: digest, status: 'committed', branchId: 'branch-imported-chat' }
+                    ? {
+                        projectId: 'project-chat-client',
+                        importId: 'chat-client-import',
+                        sourceDigest: digest,
+                        status: 'committed',
+                        branchId: 'branch-imported-chat',
+                    }
                     : { importId: 'chat-client-import', sourceDigest: digest, status: 'preview' },
             });
         },

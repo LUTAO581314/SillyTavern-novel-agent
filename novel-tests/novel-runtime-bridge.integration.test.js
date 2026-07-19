@@ -614,7 +614,7 @@ describe('Novel Runtime bridge transport', () => {
 
     test('server role prevents players from reading director data or issuing author commands', async () => {
         const playerEvents = 'id: event-player\nevent: prose.delta\ndata: {"seq":1}\n\n';
-        const harness = await createHarness((request, response) => {
+        const harness = await createHarness((request, response, body) => {
             if (request.url === '/api/v1/projects') {
                 return json(response, 200, {
                     schemaVersion: 1,
@@ -641,7 +641,7 @@ describe('Novel Runtime bridge transport', () => {
                 response.end(playerEvents);
                 return;
             }
-            return runtimeFixture(request, response, '');
+            return runtimeFixture(request, response, body);
         }, { userHandle: 'reader', userAdmin: false });
         try {
             let response = await fetch(`${harness.bridgeBaseUrl}${BRIDGE_PREFIX}/v1/workspace/projects`);

@@ -31,6 +31,7 @@
             ".eslintrc.cjs",
             ".gitignore",
             "Dockerfile",
+            "README.md",
             "package.json",
             "novel-upstream-baseline.json",
             "scripts/novel-upstream-report.mjs"

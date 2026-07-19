@@ -38,7 +38,7 @@ const SESSION_TURN_STAGES = new Set([
     'awaiting_approval', 'committing', 'committed', 'stale',
     'cancelled', 'failed',
 ]);
-const RELEASE_EXPORT_CSP = "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; font-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+const RELEASE_EXPORT_CSP = 'default-src \'none\'; img-src \'self\'; media-src \'self\'; style-src \'unsafe-inline\'; font-src \'self\'; script-src \'none\'; object-src \'none\'; base-uri \'none\'; form-action \'none\'; frame-ancestors \'none\'';
 const PLAYER_SHARED_SESSION_KEYS = Object.freeze([
     'schemaVersion', 'sessionId', 'releaseId', 'projectId', 'branchId',
     'headCommitId', 'lastEventId', 'revision', 'status', 'audience',
@@ -49,8 +49,8 @@ const PLAYER_SHARED_SESSION_KEYS = Object.freeze([
 // Workspace requests are deliberately routed through a finite allowlist. The
 // browser never supplies a Runtime URL or an arbitrary upstream path.
 const WORKSPACE_ROUTES = Object.freeze([
-    ['GET', new RegExp(`^/projects$`)],
-    ['POST', new RegExp(`^/projects$`)],
+    ['GET', new RegExp('^/projects$')],
+    ['POST', new RegExp('^/projects$')],
     ['GET', new RegExp(`^/projects/${WORKSPACE_ID}$`)],
     ['GET', new RegExp(`^/projects/${WORKSPACE_ID}/chapters$`)],
     ['POST', new RegExp(`^/projects/${WORKSPACE_ID}/chapters$`)],

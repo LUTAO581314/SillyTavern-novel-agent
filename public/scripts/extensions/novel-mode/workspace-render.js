@@ -467,11 +467,11 @@ export function createWorkspaceRenderer({
                     ['Trust', summary.trust], ['Canonical', summary.canonical],
                     ['Fact review', summary.factReviewMode],
                 ]
-            : [
-                ['Character', summary.name], ['Persona', summary.persona || '--'],
-                ['Style samples', summary.styleSamples], ['Opening draft', summary.openingDraft ? 'Mapped' : '--'],
-                ['Warnings', summary.warnings], ['Trust', summary.trust],
-            ];
+                : [
+                    ['Character', summary.name], ['Persona', summary.persona || '--'],
+                    ['Style samples', summary.styleSamples], ['Opening draft', summary.openingDraft ? 'Mapped' : '--'],
+                    ['Warnings', summary.warnings], ['Trust', summary.trust],
+                ];
         fields.forEach(([label, value]) => target?.append(text(document, 'div', `${label}: ${value}`)));
         if (importState.kind === 'chat' || importState.kind === 'swipe') {
             const mappings = importState.preview.mappings || {};
