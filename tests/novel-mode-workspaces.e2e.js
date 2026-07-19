@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Novel Studio exposes Story, World, and Director through Runtime data', async ({ page }) => {
+test('Mengdie Studio exposes Story, World, and Director through Runtime data', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction('document.getElementById("preloader") === null', { timeout: 30_000 });
 

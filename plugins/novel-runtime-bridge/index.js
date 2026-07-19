@@ -11,8 +11,8 @@ import {
 
 export const info = Object.freeze({
     id: 'novel-runtime-bridge',
-    name: 'Novel Runtime Bridge',
-    description: 'Server-owned bridge boundary for SillyTavern Novel Mode.',
+    name: 'Mengdie Runtime Bridge',
+    description: 'Server-owned bridge boundary for Mengdie Studio.',
 });
 
 let runtimeConfig = readRuntimeConfig({});

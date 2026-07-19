@@ -34,7 +34,7 @@ export function createNovelModeRuntimeClient({
     getHeaders = () => ({}),
 } = {}) {
     if (typeof fetchImpl !== 'function' || typeof getHeaders !== 'function') {
-        throw new TypeError('Novel Mode Runtime client requires fetch and header providers.');
+        throw new TypeError('Mengdie Runtime client requires fetch and header providers.');
     }
 
     async function get(path, signal) {

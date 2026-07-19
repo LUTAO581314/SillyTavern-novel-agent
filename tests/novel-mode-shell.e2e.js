@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Novel Mode binds, enforces input permissions, and restores without chat history', async ({ page }) => {
+test('Mengdie binds, enforces input permissions, and restores without chat history', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction('document.getElementById("preloader") === null', { timeout: 30_000 });
 

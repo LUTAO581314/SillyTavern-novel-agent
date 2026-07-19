@@ -42,7 +42,7 @@ function snapshotEvents() {
     ];
 }
 
-describe('Novel Mode binding shell', () => {
+describe('Mengdie binding shell', () => {
     test('submits one turn through Runtime and applies streamed Render Events', async () => {
         const calls = [];
         const session = new NovelModeSession({

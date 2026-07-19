@@ -55,10 +55,10 @@ export class NovelModeSession {
 
     constructor({ runtimeClient, onFallback = () => {} } = {}) {
         if (!runtimeClient || typeof runtimeClient.snapshot !== 'function') {
-            throw new TypeError('Novel Mode session requires a Runtime snapshot client.');
+            throw new TypeError('Mengdie session requires a Runtime snapshot client.');
         }
         if (typeof onFallback !== 'function') {
-            throw new TypeError('Novel Mode fallback handler must be a function.');
+            throw new TypeError('Mengdie fallback handler must be a function.');
         }
         this.#runtimeClient = runtimeClient;
         this.#onFallback = onFallback;

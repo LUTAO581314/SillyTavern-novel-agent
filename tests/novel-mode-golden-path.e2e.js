@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Novel Edition author golden path stays inside Runtime world and turn contracts', async ({ page }) => {
+test('Mengdie author golden path stays inside Runtime world and turn contracts', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction('document.getElementById("preloader") === null', { timeout: 30_000 });
 

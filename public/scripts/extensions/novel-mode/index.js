@@ -250,7 +250,7 @@ async function refreshBridgeHealth() {
         return payload;
     } catch (error) {
         if (error?.name !== 'AbortError') {
-            console.warn('Novel Mode Runtime bridge is unavailable.', error);
+            console.warn('Mengdie Runtime bridge is unavailable.', error);
             setText('novel_mode_runtime_status', 'Unavailable');
         }
         return null;
@@ -273,7 +273,7 @@ async function restoreBinding(settings, binding = readBinding()) {
         return view;
     } catch (error) {
         if (error?.name !== 'AbortError') {
-            console.warn('Novel Mode project binding failed.', error);
+            console.warn('Mengdie project binding failed.', error);
             setText('novel_mode_binding_status', 'Unavailable');
         }
         return null;
@@ -284,7 +284,7 @@ async function mount() {
     const existing = element('novel_mode_settings');
     if (existing) return existing;
     const target = element('extensions_settings2');
-    if (!target) throw new Error('Novel Mode settings target is unavailable.');
+    if (!target) throw new Error('Mengdie settings target is unavailable.');
 
     const html = await renderExtensionTemplateAsync(MODULE_NAME, 'settings');
     target.insertAdjacentHTML('beforeend', html);
@@ -303,7 +303,7 @@ async function mount() {
         || !(stop instanceof HTMLButtonElement)
     ) {
         root?.remove();
-        throw new Error('Novel Mode settings shell failed to mount.');
+        throw new Error('Mengdie settings shell failed to mount.');
     }
 
     const settings = loadSettings();

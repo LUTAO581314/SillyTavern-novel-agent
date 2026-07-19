@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { NovelModeLifecycle } from '../public/scripts/extensions/novel-mode/lifecycle.js';
 
-test('Novel Mode activation and deactivation are idempotent', async () => {
+test('Mengdie activation and deactivation are idempotent', async () => {
     const calls = [];
     const lifecycle = new NovelModeLifecycle({
         mount: async () => {

@@ -1,13 +1,13 @@
 {
-    "display_name": "Novel Mode",
+    "display_name": "梦蝶 Mengdie",
     "loading_order": 1,
     "requires": [],
     "optional": [],
     "js": "index.js",
     "css": "style.css",
-    "author": "Novel Agent",
+    "author": "Mengdie contributors",
     "version": "0.3.0",
-    "homePage": "https://github.com/LUTAO581314/mirofish-novel-lab",
+    "homePage": "https://github.com/LUTAO581314/mengdie",
     "hooks": {
         "activate": "init",
         "enable": "enable",

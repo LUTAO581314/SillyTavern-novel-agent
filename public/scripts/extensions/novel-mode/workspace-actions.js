@@ -391,8 +391,8 @@ export function createWorkspaceActions({
             await workspaceClient.reviewWorldInfoItem(projectId, reviewItemId, {
                 decision,
                 note: decision === 'accept'
-                    ? 'Accepted as a tentative World Info mapping in Novel Mode.'
-                    : 'Rejected during World Info review in Novel Mode.',
+                    ? 'Accepted as a tentative World Info mapping in Mengdie.'
+                    : 'Rejected during World Info review in Mengdie.',
             }, signal);
             imported.reviews = await workspaceClient.listWorldInfoReviewItems(projectId, signal);
             await refreshWorld(signal);
@@ -493,7 +493,7 @@ export function createWorkspaceActions({
                     itemId: item.id,
                     expectedItemRevision: item.revision,
                     reviewStatus: 'approved',
-                    note: 'Approved in the Novel Edition World workbench.',
+                    note: 'Approved in the Mengdie World workbench.',
                 }, signal);
                 world = result.world;
                 item = world.items.find(record => record.id === itemId);
@@ -514,8 +514,8 @@ export function createWorkspaceActions({
                     expectedItemRevision: item.revision,
                     controlMode,
                     reason: controlMode === 'open'
-                        ? 'Left open for bounded AI freedom in Novel Edition.'
-                        : `Marked ${controlMode} in Novel Edition.`,
+                        ? 'Left open for bounded AI freedom in Mengdie.'
+                        : `Marked ${controlMode} in Mengdie.`,
                 }, signal);
                 world = result.world;
             }
@@ -587,7 +587,7 @@ export function createWorkspaceActions({
                 actorId: 'sillytavern-author',
                 expectedWorldRevision: current.world.revision,
                 type: 'LockWorldBible',
-                reason: 'World locked from Novel Studio.',
+                reason: 'World locked from Mengdie Studio.',
             }, signal);
             commit({ type: 'world.locked', world: result.world });
             await refreshWorkbench(signal);
@@ -613,7 +613,7 @@ export function createWorkspaceActions({
                 actorId: 'sillytavern-author',
                 expectedWorldRevision: current.world.revision,
                 type: 'ReopenWorldBible',
-                reason: 'Reopened for explicit author revision in Novel Edition.',
+                reason: 'Reopened for explicit author revision in Mengdie.',
             }, signal);
             commit({ type: 'world.loaded', world: result.world });
             await refreshWorkbench(signal);

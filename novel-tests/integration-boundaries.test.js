@@ -7,9 +7,9 @@ import { fileURLToPath } from 'node:url';
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relativePath) => fs.readFileSync(path.join(repositoryRoot, relativePath), 'utf8');
 
-test('Novel Mode manifest exposes reversible hooks and a shell view', () => {
+test('Mengdie manifest exposes reversible hooks and a shell view', () => {
     const manifest = JSON.parse(read('public/scripts/extensions/novel-mode/manifest.json'));
-    assert.equal(manifest.display_name, 'Novel Mode');
+    assert.equal(manifest.display_name, '梦蝶 Mengdie');
     assert.equal(manifest.js, 'index.js');
     assert.equal(manifest.css, 'style.css');
     assert.deepEqual(manifest.hooks, {
@@ -80,7 +80,7 @@ test('browser code contains no Runtime target, token, or canonical write route',
     assert.doesNotMatch(browserSource, /canon(?:ical)?\/(?:commit|write)/i);
     assert.match(browserSource, /\/api\/plugins\/novel-runtime-bridge/);
     assert.match(browserSource, /get\('\/health'/);
-    // Novel Mode may mutate turns only through the fixed same-origin bridge.
+    // Mengdie may mutate turns only through the fixed same-origin bridge.
     assert.match(browserSource, /method:\s*['"]POST['"]/);
     assert.match(browserSource, /BRIDGE_PREFIX\}\/v1\/turns/);
     assert.match(browserSource, /v1\/workspace/);

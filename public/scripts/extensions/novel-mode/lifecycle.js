@@ -6,7 +6,7 @@ export class NovelModeLifecycle {
 
     constructor({ mount, unmount }) {
         if (typeof mount !== 'function' || typeof unmount !== 'function') {
-            throw new TypeError('Novel Mode lifecycle requires mount and unmount functions.');
+            throw new TypeError('Mengdie lifecycle requires mount and unmount functions.');
         }
         this.#mount = mount;
         this.#unmount = unmount;

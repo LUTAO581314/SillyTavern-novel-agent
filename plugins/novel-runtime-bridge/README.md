@@ -1,7 +1,8 @@
-# Novel Runtime Bridge
+# 梦蝶 Runtime Bridge
 
-This SillyTavern server plugin is the server-owned transport boundary for Novel
-Mode. It exposes only fixed, same-origin routes:
+This SillyTavern server plugin is the server-owned transport boundary for
+梦蝶 Studio. Its internal id remains `novel-runtime-bridge` for v0.1 protocol
+compatibility. It exposes only fixed, same-origin routes:
 
 - `GET /api/plugins/novel-runtime-bridge/health`
 - `POST /api/plugins/novel-runtime-bridge/v1/turns`
@@ -37,7 +38,7 @@ the workspace wildcard. Protected requests receive only the authenticated
 SillyTavern actor and role. Release export is author-only, size-bounded, must be
 HTML with a blocking CSP, and is returned as an attachment with `nosniff`.
 Creating a share rewrites Runtime's private `/share/:token` path to the
-same-origin `/?novel-share=:token` Novel Edition entry. That entry reads the
+same-origin `/?novel-share=:token` 梦蝶 entry. That entry reads the
 token from the URL only, calls the fixed public share handler, projects a
 player-safe session snapshot, and never stores the token in browser settings
 or `localStorage`.
@@ -57,7 +58,7 @@ Configuration is server-only:
 
 Neither value is returned by the health endpoint or stored in browser settings.
 Without the token, health reports `runtimeConfigured: false` with
-`runtimeConfigurationIssue: runtime_token_required`; Novel Mode shows `Not configured`
+`runtimeConfigurationIssue: runtime_token_required`; Mengdie shows `Not configured`
 instead of attempting a workspace or turn request.
 The target cannot be supplied in a browser body, query, URL, or header. The
 bridge maps the authenticated SillyTavern account to an opaque actor header,
